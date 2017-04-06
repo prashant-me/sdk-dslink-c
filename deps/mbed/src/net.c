@@ -152,6 +152,8 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host, const char 
             continue;
         }
 
+        mbedtls_net_set_nonblock(ctx);
+
         if( connect( ctx->fd, cur->ai_addr, MSVC_INT_CAST cur->ai_addrlen ) == 0 )
         {
             ret = 0;

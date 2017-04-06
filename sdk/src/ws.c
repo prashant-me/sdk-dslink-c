@@ -161,7 +161,7 @@ int dslink_handshake_connect_ws(Url *url,
                                 const char *salt,
                                 const char *dsId,
                                 const char *token,
-                                Socket **sock) {
+                                Socket** sock) {
     *sock = NULL;
     int ret = 0;
     unsigned char auth[90];
@@ -196,12 +196,15 @@ int dslink_handshake_connect_ws(Url *url,
                           builtUri, url->host, url->port, wsKey);
     }
 
+    log_info("connecting ...\n");
     if ((ret = dslink_socket_connect(sock, url->host,
                                      url->port, url->secure)) != 0) {
+        log_info("fail ...%d\n", errno);
         *sock = NULL;
         goto exit;
     }
 
+    log_info("ole ...\n");
     dslink_socket_write(*sock, req, reqLen);
 
     char buf[1024];

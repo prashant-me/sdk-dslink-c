@@ -82,8 +82,7 @@ int dslink_socket_connect_secure(SslSocket *sock,
 static
 int dslink_socket_connect_insecure(Socket *sock,
                                    const char *address,
-                                   unsigned short port) {
-    mbedtls_net_init(&sock->socket_ctx);
+                                   unsigned short port) {  
     char num[6];
     snprintf(num, sizeof(num), "%d", port);
     if ((errno = mbedtls_net_connect(&sock->socket_ctx, address,
@@ -98,7 +97,6 @@ int dslink_socket_connect(Socket **sock,
                           unsigned short port,
                           uint_fast8_t secure) {
     *sock = dslink_socket_init(secure);
-    mbedtls_net_set_nonblock(&(*sock)->socket_ctx);
     if (!(*sock)) {
         return DSLINK_ALLOC_ERR;
     }

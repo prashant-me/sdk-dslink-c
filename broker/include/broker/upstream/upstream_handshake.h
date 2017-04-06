@@ -27,7 +27,6 @@ typedef struct UpstreamPoll {
     UpstreamPollStatus status;
     uv_poll_t *connPoll;
     uv_timer_t *connCheckTimer;
-    struct addrinfo *conCheckAddrList;
     uv_poll_t *wsPoll;
     char *brokerUrl;
     char *dsId;
@@ -39,7 +38,7 @@ typedef struct UpstreamPoll {
     struct DownstreamNode *node;
     struct RemoteDSLink * remoteDSLink;
     struct DSLink *clientDslink;
-    struct Socket *sock;
+    struct Socket* sock;
     struct wslay_event_context *ws; // Event context for WSLay
 } UpstreamPoll;
 
