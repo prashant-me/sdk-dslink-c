@@ -270,7 +270,7 @@ json_t *json_storage_load(StorageProvider *provider) {
     JsonStore *store = provider->data;
 
     if (store->loaded == 1) {
-        return store->root;
+        return json_copy(store->root);
     }
 
     uv_fs_t dir;
