@@ -261,7 +261,7 @@ int broker_load_qos_storage(Broker *broker) {
     json_t *value;
 
     char *out;
-    json_t *loadedCopy = json_copy(loaded);
+    json_t *loadedCopy = json_deep_copy(loaded);
     json_object_foreach(loadedCopy, key, value) {
         if (!json_is_object(value)) {
             continue;
