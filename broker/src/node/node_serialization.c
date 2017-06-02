@@ -255,12 +255,13 @@ int broker_load_data_nodes(Broker *broker) {
 
 
 int broker_load_qos_storage(Broker *broker) {
-    json_t *loadedCopy = dslink_storage_traverse(broker->storage);
+    json_t *loaded = dslink_storage_traverse(broker->storage);
 
     const char *key;
     json_t *value;
 
     char *out;
+    json_t *loadedCopy = json_copy(loaded);
     json_object_foreach(loadedCopy, key, value) {
         if (!json_is_object(value)) {
             continue;

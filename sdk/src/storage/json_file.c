@@ -270,7 +270,7 @@ json_t *json_storage_load(StorageProvider *provider) {
     JsonStore *store = provider->data;
 
     if (store->loaded == 1) {
-        return json_copy(store->root);
+        return store->root;
     }
 
     uv_fs_t dir;
@@ -403,6 +403,7 @@ void json_storage_destroy(StorageProvider *provider) {
         store->timer_setup = 0;
     }
 
+    json_object_clear(store->root);
     json_decref(store->root);
     json_decref(store->save_queue);
 
