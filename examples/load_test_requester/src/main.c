@@ -112,14 +112,24 @@ void disconnected(DSLink *link) {
 }
 
 void requester_ready(DSLink *link) {
-    int link_id = atoi(link->config.name);
+    char buf[1024];
+    sprintf(buf, "%s.requestpath", link->config.name);
 
-    char buf[256];
+    FILE* fp = fopen(buf, "r");
+    if (NULL == fp) {
+        log_info("Could not open file %s'", buf);
+        return;
+    }
+
+    char subscriptionPath[2048];
+    fgets(subscriptionPath, sizeof(subscriptionPath), fp);
+    fclose(fp);
+
     sprintf(buf, "/downstream/responder%d/rng", link_id);
     configure_request(dslink_requester_list(link, "/downstream", on_list_update));
     configure_request(dslink_requester_subscribe(
         link,
-        buf,
+        subscriptionPath,
         on_value_update,
         0
     ));
