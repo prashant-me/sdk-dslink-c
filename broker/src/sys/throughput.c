@@ -12,6 +12,8 @@ static BrokerNode *messagesInPerSecond;
 static BrokerNode *dataInPerSecond;
 static BrokerNode *frameInPerSecond;
 
+static BrokerNode *outputQueueLengthPerSecond;
+
 static int outframes = -1;
 static int outbytes = 0;
 static int outmessages = 0;
@@ -43,6 +45,42 @@ static void onThroughputTimer(uv_timer_t *handle) {
 
         t = outmessages; outmessages = 0;
         broker_node_update_value(messagesOutPerSecond, json_integer(t), 1);
+    }
+    {
+        int outputQueueLength = 0;
+
+        {
+            ref_t *ref = dslink_map_get(outputQueueLengthPerSecond->parent->parent->children, "downstream");
+            BrokerNode *downstream = (BrokerNode *)ref->data;
+
+            dslink_map_foreach(downstream->children) {
+                BrokerNode *child = (BrokerNode *) entry->value->data;
+
+                if (child->type == DOWNSTREAM_NODE) {
+                    DownstreamNode *downstreamNode = (DownstreamNode *) child;
+                    if (downstreamNode->link) {
+                        outputQueueLength += (int)(wslay_event_get_queued_msg_count(downstreamNode->link->ws));
+                    }
+                }
+            }
+        }
+        {
+            ref_t *ref = dslink_map_get(outputQueueLengthPerSecond->parent->parent->children, "upstream");
+            BrokerNode *upstream = (BrokerNode *)ref->data;
+
+            dslink_map_foreach(upstream->children) {
+                BrokerNode *child = (BrokerNode *) entry->value->data;
+
+                if (child->type == DOWNSTREAM_NODE) {
+                    DownstreamNode *upstreamNode = (DownstreamNode *) child;
+                    if (upstreamNode->link) {
+                        outputQueueLength += (int)(wslay_event_get_queued_msg_count(upstreamNode->link->ws));
+                    }
+                }
+            }
+        }
+
+        broker_node_update_value(outputQueueLengthPerSecond, json_integer(outputQueueLength), 1);
     }
 }
 
@@ -79,6 +117,10 @@ int init_throughput(struct BrokerNode *sysNode) {
     frameInPerSecond = broker_node_create("frameInPerSecond", "node");
     set_json_atttribute_no_check(frameInPerSecond->meta, "$type", json_string_nocheck("number"));
     broker_node_add(sysNode, frameInPerSecond);
+
+    outputQueueLengthPerSecond = broker_node_create("outputQueueLengthPerSecond", "node");
+    set_json_atttribute_no_check(outputQueueLengthPerSecond->meta, "$type", json_string_nocheck("number"));
+    broker_node_add(sysNode, outputQueueLengthPerSecond);
 
     uv_timer_init(mainLoop, &throughputTimer);
     uv_timer_start(&throughputTimer, onThroughputTimer, 1000, 1000);
@@ -119,6 +161,9 @@ int throughput_output_needed() {
         return 1;
     }
     if (frameOutPerSecond->sub_stream) {
+        return 1;
+    }
+    if (outputQueueLengthPerSecond->sub_stream) {
         return 1;
     }
     outframes = -1;
