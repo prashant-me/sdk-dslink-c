@@ -10,6 +10,8 @@
 #include "broker/msg/msg_handler.h"
 #include "broker/net/ws.h"
 
+#include <inttypes.h>
+
 ssize_t broker_want_read_cb(wslay_event_context_ptr ctx,
                      uint8_t *buf, size_t len,
                      int flags, void *user_data) {
@@ -98,6 +100,27 @@ ssize_t broker_want_write_cb(wslay_event_context_ptr ctx,
     return written;
 }
 
+
+/* 
+    TODO: has to go into an own module
+*/
+int diff(struct timespec start, struct timespec end)
+{
+    struct timespec res;
+    long tmp = end.tv_nsec - start.tv_nsec;
+    if (tmp < 0) {
+        res.tv_sec = end.tv_sec - start.tv_sec - 1;
+        res.tv_nsec = 1000000000L + tmp;
+    } else {
+        res.tv_sec = end.tv_sec - start.tv_sec;
+        res.tv_nsec = tmp;
+    }
+    return (1000000000L * res.tv_sec + res.tv_nsec)/1000;
+}
+
+
+
+
 void broker_on_ws_data(wslay_event_context_ptr ctx,
                 const struct wslay_event_on_msg_recv_arg *arg,
                 void *user_data) {
@@ -120,15 +143,26 @@ void broker_on_ws_data(wslay_event_context_ptr ctx,
             return;
         }
 
+        /* */
+        struct timespec start, end;
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        /* */
+
         json_error_t err;
         json_t *data = json_loadb((char *) arg->msg,
                                   arg->msg_length, 0, &err);
+        /* */
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        /* */
+
         if (throughput_input_needed()) {
             int receiveMessages = 0;
             if (data) {
                 receiveMessages = broker_count_json_msg(data);
             }
-            throughput_add_input(arg->msg_length, receiveMessages);
+            int parsingtime = diff(start, end);
+            log_debug("json parsing took %dms\n", parsingtime);
+            throughput_add_input(arg->msg_length, receiveMessages, parsingtime);
         }
         if (!data) {
             return;

@@ -10,7 +10,7 @@ struct BrokerNode;
 int init_throughput(struct BrokerNode *sysNode);
 
 int throughput_input_needed();
-void throughput_add_input(int bytes, int messages);
+void throughput_add_input(int bytes, int messages, int parsingtime);
 
 int throughput_output_needed();
 void throughput_add_output(int bytes, int messages);

@@ -13,6 +13,8 @@ static BrokerNode *dataInPerSecond;
 static BrokerNode *frameInPerSecond;
 
 static BrokerNode *outputQueueLengthPerSecond;
+static BrokerNode *avgParsingTimePerSecond;
+static BrokerNode *maxParsingTime;
 
 static int outframes = -1;
 static int outbytes = 0;
@@ -21,13 +23,15 @@ static int outmessages = 0;
 static int inframes = -1;
 static int inbytes = 0;
 static int inmessages = 0;
+static int inparsingtime = 0;
+static int inmaxparsingtime = 0;
 
 static uv_timer_t throughputTimer;
 
 static void onThroughputTimer(uv_timer_t *handle) {
     (void) handle;
     if (inframes >= 0) {
-        int t = inframes; inframes = 0;
+        int t = inframes;
         broker_node_update_value(frameInPerSecond, json_integer(t), 1);
 
         t = inbytes; inbytes = 0;
@@ -35,6 +39,14 @@ static void onThroughputTimer(uv_timer_t *handle) {
 
         t = inmessages; inmessages = 0;
         broker_node_update_value(messagesInPerSecond, json_integer(t), 1);
+
+        broker_node_update_value(maxParsingTime, json_integer(inmaxparsingtime), 1);
+
+        if(inframes > 0) {
+            t = inparsingtime / inframes; inparsingtime = 0;
+            broker_node_update_value(avgParsingTimePerSecond, json_integer(t), 1);
+        }
+        inframes = 0;
     }
     if (outframes >= 0) {
         int t = outframes; outframes = 0;
@@ -118,9 +130,17 @@ int init_throughput(struct BrokerNode *sysNode) {
     set_json_atttribute_no_check(frameInPerSecond->meta, "$type", json_string_nocheck("number"));
     broker_node_add(sysNode, frameInPerSecond);
 
-    outputQueueLengthPerSecond = broker_node_create("outputQueueLengthPerSecond", "node");
+    outputQueueLengthPerSecond = broker_node_create("outputQueueLength", "node");
     set_json_atttribute_no_check(outputQueueLengthPerSecond->meta, "$type", json_string_nocheck("number"));
     broker_node_add(sysNode, outputQueueLengthPerSecond);
+
+    avgParsingTimePerSecond = broker_node_create("avgParsingTimePerSecnd", "node");
+    set_json_atttribute_no_check(avgParsingTimePerSecond->meta, "$type", json_string_nocheck("number"));
+    broker_node_add(sysNode, avgParsingTimePerSecond);
+
+    maxParsingTime = broker_node_create("maxParsingTime", "node");
+    set_json_atttribute_no_check(maxParsingTime->meta, "$type", json_string_nocheck("number"));
+    broker_node_add(sysNode, maxParsingTime);
 
     uv_timer_init(mainLoop, &throughputTimer);
     uv_timer_start(&throughputTimer, onThroughputTimer, 1000, 1000);
@@ -138,11 +158,18 @@ int throughput_input_needed() {
     if (frameInPerSecond->sub_stream) {
         return 1;
     }
+    if (avgParsingTimePerSecond->sub_stream) {
+        return 1;
+    }
+    if (maxParsingTime->sub_stream) {
+        return 1;
+    }
+
     inframes = -1;
     return 0;
 }
 
-void throughput_add_input(int bytes, int messages) {
+void throughput_add_input(int bytes, int messages, int parsingtime) {
     if (inframes < 0) {
         inframes = 1;
     } else {
@@ -150,6 +177,10 @@ void throughput_add_input(int bytes, int messages) {
     }
     inbytes += bytes;
     inmessages += messages;
+    inparsingtime += parsingtime;
+    if(parsingtime > inmaxparsingtime) {
+        inmaxparsingtime = parsingtime;
+    }
 }
 
 
@@ -166,6 +197,7 @@ int throughput_output_needed() {
     if (outputQueueLengthPerSecond->sub_stream) {
         return 1;
     }
+
     outframes = -1;
     return 0;
 }
