@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8)
 project(sdk_dslink_c C)
 
 option(USE_CCACHE "Enable CCache Support" ON)
@@ -214,7 +214,7 @@ set(DSLINK_INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries"
 set(DSLINK_INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
 set(DSLINK_INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
 
-export(TARGETS sdk_dslink_c
+export(TARGETS libuv jansson sdk_dslink_c
         FILE "${PROJECT_BINARY_DIR}/sdk_dslink_c-targets.cmake")
 export(PACKAGE sdk_dslink_c)
 
