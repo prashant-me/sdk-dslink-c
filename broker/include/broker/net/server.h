@@ -8,6 +8,7 @@ extern "C" {
 #include <uv.h>
 #include <jansson.h>
 #include <dslink/socket.h>
+#include <dslink/socket_private.h>
 
 #include "broker/net/http.h"
 

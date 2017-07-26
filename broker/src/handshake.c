@@ -369,6 +369,11 @@ int broker_handshake_handle_ws(Broker *broker,
         goto exit;
     }
     link->ws = ws;
+
+    // disable nagle
+    int i = 1;
+    setsockopt(client->sock->socket_ctx.fd, IPPROTO_TCP, TCP_NODELAY, (void *)&i, sizeof(i));
+
     broker_ws_send_init(client->sock, wsAccept);
 
     ping_timer = dslink_malloc(sizeof(uv_timer_t));
