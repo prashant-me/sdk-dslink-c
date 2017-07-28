@@ -18,7 +18,9 @@ void init(DSLink *link) {
 
     DSNode *superRoot = link->responder->super_root;
 
+    log_info("Before!\n");
     responder_init_rng(link, superRoot);
+    log_info("After!\n");
 
     log_info("Initialized!\n");
 }

@@ -47,6 +47,7 @@ void responder_rng_unsubbed(DSLink *link, DSNode *node) {
 }
 
 void responder_init_rng(DSLink *link, DSNode *root) {
+    log_info("rng Node initializing\n");
     DSNode *num = dslink_node_create(root, "rng", "node");
     if (!num) {
         log_warn("Failed to create the rng node\n");
@@ -71,4 +72,6 @@ void responder_init_rng(DSLink *link, DSNode *root) {
         log_warn("Failed to add the rng node to the root\n");
         dslink_node_tree_free(link, num);
     }
+
+    log_info("rng Node initialized\n");
 }

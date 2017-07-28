@@ -112,6 +112,7 @@ void disconnected(DSLink *link) {
 }
 
 void requester_ready(DSLink *link) {
+/*
     char buf[1024];
     sprintf(buf, "%s.requestpath", link->config.name);
 
@@ -125,11 +126,13 @@ void requester_ready(DSLink *link) {
     fgets(subscriptionPath, sizeof(subscriptionPath), fp);
     fclose(fp);
 
-    sprintf(buf, "/downstream/responder%d/rng", link_id);
+    log_info("Subscribing to %s'", subscriptionPath);
+*/
     configure_request(dslink_requester_list(link, "/downstream", on_list_update));
     configure_request(dslink_requester_subscribe(
         link,
-        subscriptionPath,
+        //subscriptionPath,
+        "/downstream/responder01/rng",
         on_value_update,
         0
     ));
