@@ -126,7 +126,11 @@ void requester_ready(DSLink *link) {
     }
 
     char subscriptionPath[2048];
-    fgets(subscriptionPath, sizeof(subscriptionPath), fp);
+    if(!fgets(subscriptionPath, sizeof(subscriptionPath), fp)) {
+        log_info("Could not read from file '%s'", buf);
+        fclose(fp);
+    }
+
     fclose(fp);
 
     log_info("Subscribing to %s'", subscriptionPath);
@@ -136,7 +140,7 @@ void requester_ready(DSLink *link) {
         link,
         subscriptionPath,
         on_value_update,
-        3
+        1
     ));
 
     start_stream_invoke(link);
