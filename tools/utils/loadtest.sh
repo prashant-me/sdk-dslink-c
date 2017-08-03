@@ -4,7 +4,8 @@ count="$1"
 
 #set -x
 
-broker_address=http://10.228.219.253:8100/conn
+#broker_address=http://10.228.219.253:8100/conn
+broker_address=http://eff-t-cnt7-02:8080/conn
 #broker_address=http://eff-t-cnt7-02:8080/conn
 #broker_address=http://localhost:8080/conn
 
@@ -34,4 +35,4 @@ rm requester*.requestpath
 rm -rf testrun
 
 killall -9 load_test_responder
-
+killall -9 load_test_requester
