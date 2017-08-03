@@ -75,7 +75,7 @@ void on_list_update(struct DSLink *link, ref_t *req_ref, json_t *resp) {
             printf("%s = (Unknown Type)\n", json_string_value(name));
         }
     }
-
+    fflush(stdout);
     dslink_requester_close(link, (uint32_t) json_integer_value(json_object_get(resp, "rid")));
 }
 
@@ -88,10 +88,14 @@ void on_value_update(struct DSLink *link, uint32_t sid, json_t *val, json_t *ts)
     const int currentValue = (int)json_integer_value(val);
     if(++lastValue != currentValue) {
         printf("ERROR: Got value %d, expected value %d\n", (int)json_integer_value(val), lastValue);
+
+        // If we skipped some messages, we only want to see the message once.
+        lastValue = currentValue;
     }
 
     if(currentValue%1000 == 0) {
         log_info("Received %d messages\n", (int)json_integer_value(val));
+        fflush(stdout);
     }
 
 }
@@ -112,7 +116,6 @@ void disconnected(DSLink *link) {
 }
 
 void requester_ready(DSLink *link) {
-/*
     char buf[1024];
     sprintf(buf, "%s.requestpath", link->config.name);
 
@@ -127,14 +130,13 @@ void requester_ready(DSLink *link) {
     fclose(fp);
 
     log_info("Subscribing to %s'", subscriptionPath);
-*/
+
     configure_request(dslink_requester_list(link, "/downstream", on_list_update));
     configure_request(dslink_requester_subscribe(
         link,
-        //subscriptionPath,
-        "/downstream/responder01/rng",
+        subscriptionPath,
         on_value_update,
-        0
+        3
     ));
 
     start_stream_invoke(link);
