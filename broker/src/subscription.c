@@ -149,21 +149,19 @@ void broker_update_sub_req(SubRequester *subReq, json_t *varray) {
         broker_ws_send_obj(subReq->reqNode->link, top);
 
         json_decref(top);
-    } else if (subReq->qos > 0){
+    } else if (subReq->qos > 1){
         // add to qos queue
         if (!subReq->qosQueue) {
             subReq->qosQueue = json_array();
         }
-        if ((subReq->qos & 1) == 0) {
-            clear_qos_queue(subReq, 0);
-        } else if (json_array_size(subReq->qosQueue) >= broker_max_qos_queue_size) {
+        if (json_array_size(subReq->qosQueue) >= broker_max_qos_queue_size) {
             // destroy qos queue when exceed max queue size
             clear_qos_queue(subReq, 1);
             subReq->qos = 0;
             return;
         }
         json_array_append(subReq->qosQueue, varray);
-        if (subReq->qos & 2) {
+        if (subReq->qos > 2) {
             serialize_qos_queue(subReq, 0);
         }
     }
