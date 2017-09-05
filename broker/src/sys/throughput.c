@@ -30,34 +30,6 @@ static uv_timer_t throughputTimer;
 
 static void onThroughputTimer(uv_timer_t *handle) {
     (void) handle;
-    if (inframes >= 0) {
-        int t = inframes;
-        broker_node_update_value(frameInPerSecond, json_integer(t), 1);
-
-        t = inbytes; inbytes = 0;
-        broker_node_update_value(dataInPerSecond, json_integer(t), 1);
-
-        t = inmessages; inmessages = 0;
-        broker_node_update_value(messagesInPerSecond, json_integer(t), 1);
-
-        broker_node_update_value(maxParsingTime, json_integer(inmaxparsingtime), 1);
-
-        if(inframes > 0) {
-            t = inparsingtime / inframes; inparsingtime = 0;
-            broker_node_update_value(avgParsingTimePerSecond, json_integer(t), 1);
-        }
-        inframes = 0;
-    }
-    if (outframes >= 0) {
-        int t = outframes; outframes = 0;
-        broker_node_update_value(frameOutPerSecond, json_integer(t), 1);
-
-        t = outbytes; outbytes = 0;
-        broker_node_update_value(dataOutPerSecond, json_integer(t), 1);
-
-        t = outmessages; outmessages = 0;
-        broker_node_update_value(messagesOutPerSecond, json_integer(t), 1);
-    }
     {
         int outputQueueLength = 0;
 
@@ -93,6 +65,34 @@ static void onThroughputTimer(uv_timer_t *handle) {
         }
 
         broker_node_update_value(outputQueueLengthPerSecond, json_integer(outputQueueLength), 1);
+    }
+    if (inframes >= 0) {
+        int t = inframes;
+        broker_node_update_value(frameInPerSecond, json_integer(t), 1);
+
+        t = inbytes; inbytes = 0;
+        broker_node_update_value(dataInPerSecond, json_integer(t), 1);
+
+        t = inmessages; inmessages = 0;
+        broker_node_update_value(messagesInPerSecond, json_integer(t), 1);
+
+        broker_node_update_value(maxParsingTime, json_integer(inmaxparsingtime), 1);
+
+        if(inframes > 0) {
+            t = inparsingtime / inframes; inparsingtime = 0;
+            broker_node_update_value(avgParsingTimePerSecond, json_integer(t), 1);
+        }
+        inframes = 0;
+    }
+    if (outframes >= 0) {
+        int t = outframes; outframes = 0;
+        broker_node_update_value(frameOutPerSecond, json_integer(t), 1);
+
+        t = outbytes; outbytes = 0;
+        broker_node_update_value(dataOutPerSecond, json_integer(t), 1);
+
+        t = outmessages; outmessages = 0;
+        broker_node_update_value(messagesOutPerSecond, json_integer(t), 1);
     }
 }
 
@@ -134,12 +134,14 @@ int init_throughput(struct BrokerNode *sysNode) {
     set_json_atttribute_no_check(outputQueueLengthPerSecond->meta, "$type", json_string_nocheck("number"));
     broker_node_add(sysNode, outputQueueLengthPerSecond);
 
-    avgParsingTimePerSecond = broker_node_create("avgParsingTimePerSecnd", "node");
+    avgParsingTimePerSecond = broker_node_create("avgParsingTimePerSecond", "node");
     set_json_atttribute_no_check(avgParsingTimePerSecond->meta, "$type", json_string_nocheck("number"));
+    set_json_atttribute_no_check(avgParsingTimePerSecond->meta, "@unit", json_string_nocheck("ms"));
     broker_node_add(sysNode, avgParsingTimePerSecond);
 
     maxParsingTime = broker_node_create("maxParsingTime", "node");
     set_json_atttribute_no_check(maxParsingTime->meta, "$type", json_string_nocheck("number"));
+    set_json_atttribute_no_check(maxParsingTime->meta, "@unit", json_string_nocheck("ms"));
     broker_node_add(sysNode, maxParsingTime);
 
     uv_timer_init(mainLoop, &throughputTimer);
