@@ -4,6 +4,9 @@
 #include <broker/config.h>
 #include <broker/broker.h>
 
+#define LOG_TAG "subbscription"
+#include <dslink/log.h>
+
 
 void send_subscribe_request(DownstreamNode *node,
                             const char *path,
@@ -147,6 +150,13 @@ void broker_update_sub_req(SubRequester *subReq, json_t *varray) {
         json_array_append(updates, varray);
 
         broker_ws_send_obj(subReq->reqNode->link, top);
+        // TODO lfuerste: make threshold configurable
+        if(wslay_event_get_queued_msg_count(subReq->reqNode->link->ws) > 1024) {
+            // the responder shall not send more data, as the queue is full and we want not to be flooded and
+            // eventually be killed by OOM
+            subReq->reqNode->link->stopRead = 1;
+            log_info("Stopping read for link %s, as the output queue is full\n", subReq->reqNode->link->dsId->data);
+        }
 
         json_decref(top);
     } else if (subReq->qos > 1){

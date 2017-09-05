@@ -81,12 +81,23 @@ void broker_server_client_ready(uv_poll_t *poll,
                     uv_poll_start(poll, UV_READABLE, broker_server_client_ready);
                 } else {
                     log_debug("Enabling READ/WRITE poll on client\n");
-                    uv_poll_start(poll, UV_READABLE | UV_WRITABLE, broker_server_client_ready);
+                    if(link->stopRead) {
+                        uv_poll_start(poll, UV_WRITABLE, broker_server_client_ready);
+                    } else {
+                        uv_poll_start(poll, UV_READABLE | UV_WRITABLE, broker_server_client_ready);
+                    }
                     int stat = wslay_event_send(link->ws);
                     if(stat != 0) {
                         broker_close_link(link);
                         client = NULL;
                     }
+                    // TODO lfuerste: make threshold configurable
+                    if(wslay_event_get_queued_msg_count(link->ws) < 512) {
+                        // the responder shall start sending data again, as the congestion was resovled
+                        link->stopRead = 0;
+                        uv_poll_start(poll, UV_READABLE | UV_WRITABLE, broker_server_client_ready);
+                    }
+
                 }
             }
         }

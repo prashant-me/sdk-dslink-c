@@ -30,6 +30,7 @@ typedef struct RemoteDSLink {
     uint8_t isRequester;
     uint8_t isResponder;
     uint8_t pendingClose;
+    uint8_t stopRead;
 
     uint32_t msgId;
 

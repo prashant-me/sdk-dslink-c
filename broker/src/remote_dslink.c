@@ -21,6 +21,9 @@ int broker_remote_dslink_init(RemoteDSLink *link) {
         return 1;
     }
     permission_groups_init(&link->permission_groups);
+    link->pendingClose = 0;
+    link->stopRead = 0;
+
     return 0;
 }
 
