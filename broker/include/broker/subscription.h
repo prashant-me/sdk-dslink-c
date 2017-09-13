@@ -8,6 +8,8 @@ extern "C" {
 #include <broker/stream.h>
 #include <broker/node.h>
 
+#include <dslink/col/vector.h>
+
 typedef struct SubRequester {
     char *path;
     DownstreamNode *reqNode;
@@ -20,6 +22,7 @@ typedef struct SubRequester {
     char *qosKey2;
     // pending list node
     ListNode *pendingNode;
+    Vector* pendingAcks;
 } SubRequester;
 
 void send_subscribe_request(DownstreamNode *node,

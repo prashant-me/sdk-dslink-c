@@ -44,6 +44,7 @@ SubRequester *broker_create_sub_requester(DownstreamNode * node, const char *pat
     req->reqNode = node;
     req->reqSid = reqSid;
     req->qos = qos;
+    req->pendingAcks = NULL;
     return req;
 }
 
@@ -94,6 +95,11 @@ void broker_free_sub_requester(SubRequester *req) {
         clear_qos_queue(req, 1);
         json_decref(req->qosQueue);
     }
+    if(req->pendingAcks) {
+        vector_free(req->pendingAcks);
+        dslink_free(req->pendingAcks);
+    }
+
     dslink_free(req->path);
     dslink_free(req->qosKey1);
     dslink_free(req->qosKey2);
@@ -146,7 +152,14 @@ void broker_update_sub_req(SubRequester *subReq, json_t *varray) {
         json_array_set_new(varray, 0, json_integer(subReq->reqSid));
         json_array_append(updates, varray);
 
-        broker_ws_send_obj(subReq->reqNode->link, top);
+        int msgid = broker_ws_send_obj(subReq->reqNode->link, top);
+        if(subReq->qos > 0) {
+            if(!subReq->pendingAcks) {
+                subReq->pendingAcks = (Vector*)dslink_malloc(sizeof(Vector));
+                vector_init(subReq->pendingAcks, 64);
+            }
+            vector_append(subReq->pendingAcks, msgid);
+        }
 
         json_decref(top);
     } else if (subReq->qos > 1){

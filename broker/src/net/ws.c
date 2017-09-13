@@ -84,7 +84,7 @@ int broker_ws_send_obj(RemoteDSLink *link, json_t *obj) {
         throughput_add_output(sentBytes, sentMessages);
     }
     dslink_free(data);
-    return 0;
+    return link->msgId;
 }
 
 int broker_ws_send(RemoteDSLink *link, const char *data) {
