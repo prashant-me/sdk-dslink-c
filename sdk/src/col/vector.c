@@ -144,14 +144,28 @@ int vector_binary_search(const Vector* vec, void* data, vector_comparison_fn_typ
         return -1;
     }
 
-    uint32_t l = 0;
-    uint32_t r = vec->size - 1;
+    return vector_binary_search_range( vec, data, cmp_fn, 0, vec->size );
+}
+
+int vector_binary_search_range(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn, uint32_t lower, uint32_t r)
+{
+    if ( !vec || vec->size == 0 || !r) {
+        return -1;
+    }
+
+    if ( r >= vec->size ) {
+      r = vec->size-1;
+    } else {
+      --r;
+    }
+
+    uint32_t l = lower;
     uint32_t m = 0;
-    while(l < r) {
+    while(l <= r) {
         m = (l + r) / 2;
         int res = cmp_fn(data, (char*)vec->data + (m*vec->element_size));
         if(res == 0) {
-            return m;
+            return lower+m;
         } else if(res > 0) {
             l = m + 1;
         } else {

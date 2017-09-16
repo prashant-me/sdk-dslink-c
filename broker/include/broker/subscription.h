@@ -41,10 +41,10 @@ void broker_free_sub_requester(SubRequester *req);
 void clear_qos_queue(SubRequester *subReq, uint8_t serialize);
 
 void broker_update_sub_req_qos(SubRequester *subReq);
-void broker_update_sub_req(SubRequester *subReq, json_t *varray);
+int broker_update_sub_req(SubRequester *subReq, json_t *varray);
 
-void broker_update_sub_stream(BrokerSubStream *stream, json_t *array);
-void broker_update_sub_stream_value(BrokerSubStream *stream, json_t *value, json_t *ts);
+int broker_update_sub_stream(BrokerSubStream *stream, json_t *array, json_t *responder_msg_id);
+int broker_update_sub_stream_value(BrokerSubStream *stream, json_t *value, json_t *ts, json_t *responder_msg_id);
 
 void broker_update_stream_qos(BrokerSubStream *stream);
 void broker_update_sub_qos(SubRequester *req, uint8_t qos);

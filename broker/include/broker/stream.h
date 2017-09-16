@@ -70,8 +70,8 @@ typedef struct BrokerSubStream {
 
     char *remote_path;
 
-
     json_t *last_value;
+    json_t *last_pending_responder_msg_id;
 
     // Map<DownstreamNode *, SubClient *>
     Map reqSubs;

@@ -29,15 +29,55 @@ int cmp_int(const void* lhs, const void* rhs)
 
 int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
 {
-    PendingAck pack = { NULL, ack };
-    int idx = vector_binary_search(link->node->pendingAcks, &pack, cmp_pack);
+    PendingAck search_pack = { NULL, ack };
+    int idx = vector_binary_search(link->node->pendingAcks, &search_pack, cmp_pack);
+
     if(idx >= 0) {
-        PendingAck* pack = (PendingAck*)vector_get(link->node->pendingAcks, idx);
-        int sub_idx = vector_binary_search(pack->subscription->pendingAcks, &ack, cmp_int);
+        PendingAck pack = *(PendingAck*)vector_get(link->node->pendingAcks, idx);
+        int sub_idx = vector_binary_search(pack.subscription->pendingAcks, &ack, cmp_int);
         if(sub_idx >= 0) {
-            vector_remove(pack->subscription->pendingAcks, sub_idx);
-        }
-        vector_remove(link->node->pendingAcks, idx);
+  	    SubRequester *subReq = pack.subscription;
+	    BrokerSubStream *stream = subReq->stream;
+
+	    // We have to remove the received pending ack first, because we only know its position
+	    vector_remove(link->node->pendingAcks, idx);
+	    // Now we may remove all skipped pending acks
+	    for ( int skipped_sub_idx = 0; skipped_sub_idx < sub_idx; ++skipped_sub_idx ) {
+	      PendingAck skipped_pack = { NULL, *(int*)vector_get(subReq->pendingAcks, skipped_sub_idx) };
+	      int skipped_idx = vector_binary_search_range( link->node->pendingAcks, &skipped_pack, cmp_pack, 0, idx );
+	      if ( skipped_idx >= 0 ) {
+		vector_remove(link->node->pendingAcks, skipped_idx);
+	      }
+	    }
+            vector_remove_range(subReq->pendingAcks, 0, sub_idx);
+
+	    // TODO: Use configurable ack queue
+            if( vector_count(subReq->pendingAcks) == 8 && stream->last_pending_responder_msg_id ) {
+	      int send_pending_responder_ack = 1;
+	      dslink_map_foreach(&stream->reqSubs) {
+		SubRequester *req = entry->value->data;
+		send_pending_responder_ack &= vector_count(req->pendingAcks) > 8  ? 0 : 1;
+	      }
+	      
+	      if ( send_pending_responder_ack ) {
+		DownstreamNode* downstream_node = (DownstreamNode*)stream->respNode;
+		if ( downstream_node->link ) {
+		  json_t *obj = json_object();
+		  if (obj) {
+		    json_object_set_nocheck(obj, "ack", stream->last_pending_responder_msg_id);
+		    broker_ws_send_obj(downstream_node->link, obj);
+		    json_decref(obj);
+
+		    json_decref(stream->last_pending_responder_msg_id);
+		    stream->last_pending_responder_msg_id = NULL;
+		  }
+		}
+	      }
+            }
+
+        } else {
+	  vector_remove(link->node->pendingAcks, idx);
+	}
         goto ready;
     }
 
@@ -183,7 +223,9 @@ void broker_update_sub_req_qos(SubRequester *subReq) {
     }
 }
 
-void broker_update_sub_req(SubRequester *subReq, json_t *varray) {
+int broker_update_sub_req(SubRequester *subReq, json_t *varray) {
+  int result = 1;
+
     if (subReq->reqNode->link) {
         json_t *top = json_object();
         json_t *resps = json_array();
@@ -213,8 +255,9 @@ void broker_update_sub_req(SubRequester *subReq, json_t *varray) {
             PendingAck pack = { subReq, msgid };
             vector_append(node->pendingAcks, &pack);
 
-            if(vector_count(node->pendingAcks) > 8) {
-                printf("Houston, we have a problem!\n");
+	    // TODO: Make this value configurable
+            if(vector_count(subReq->pendingAcks) > 8) {
+  	        result = 0;
             }
         }
 
@@ -228,30 +271,39 @@ void broker_update_sub_req(SubRequester *subReq, json_t *varray) {
             // destroy qos queue when exceed max queue size
             clear_qos_queue(subReq, 1);
             subReq->qos = 0;
-            return;
+            return result;
         }
         json_array_append(subReq->qosQueue, varray);
         if (subReq->qos > 2) {
             serialize_qos_queue(subReq, 0);
         }
     }
+
+    return result;
 }
 
 static
-void broker_update_sub_reqs(BrokerSubStream *stream) {
-    dslink_map_foreach(&stream->reqSubs) {
-        SubRequester *req = entry->value->data;
-        broker_update_sub_req(req, stream->last_value);
+int broker_update_sub_reqs(BrokerSubStream *stream, json_t *responder_msg_id) {
+  int result = 1;
+
+  dslink_map_foreach(&stream->reqSubs) {
+    SubRequester *req = entry->value->data;
+    result &= broker_update_sub_req(req, stream->last_value);
+    if ( !result && responder_msg_id ) {
+      json_decref(stream->last_pending_responder_msg_id);
+      stream->last_pending_responder_msg_id = json_incref(responder_msg_id);
     }
+  }
+  return result;
 }
-void broker_update_sub_stream(BrokerSubStream *stream, json_t *varray) {
+int broker_update_sub_stream(BrokerSubStream *stream, json_t *varray, json_t *responder_msg_id) {
     json_decref(stream->last_value);
     stream->last_value = varray;
     json_incref(varray);
-    broker_update_sub_reqs(stream);
+    return broker_update_sub_reqs(stream, responder_msg_id);
 }
 
-void broker_update_sub_stream_value(BrokerSubStream *stream, json_t *value, json_t *ts) {
+int broker_update_sub_stream_value(BrokerSubStream *stream, json_t *value, json_t *ts, json_t *responder_msg_id) {
     json_decref(stream->last_value);
     json_t *varray = json_array();
     json_array_append(varray, json_null());
@@ -268,7 +320,7 @@ void broker_update_sub_stream_value(BrokerSubStream *stream, json_t *value, json
     }
 
     stream->last_value = varray;
-    broker_update_sub_reqs(stream);
+    return broker_update_sub_reqs(stream, responder_msg_id);
 }
 
 void broker_update_stream_qos(BrokerSubStream *stream) {

@@ -246,25 +246,76 @@ void col_vec_add_test(void **state) {
 }
 
 static
-void col_vec_binary_find_test(void **state) {
+void col_vec_binary_search_test(void **state) {
     (void) state;
 
     Vector vec;
-    vector_init(&vec, 10, sizeof(int));
+    vector_init(&vec, 512, sizeof(int));
 
-    int n = 1;
-    for(; n < 1024; ++n) {
+    int n = 2;
+    for(; n < 1024; n += 2) {
         vector_append(&vec, &n);
     }
+    assert_int_equal(vector_count(&vec), 512);
 
     n = 42;
-    int idx = vector_find(&vec, &n, cmp_int);
-    assert_int_equal(idx, 41);
-    assert_int_equal(*(int*)vector_get(&vec, idx), 42);
+    int idx = vector_binary_search(&vec, &n, cmp_int);
+    assert_int_equal(idx, 21);
+    assert_int_equal(*(int*)vector_get(&vec, idx), n);
 
-    idx = vector_binary_search(&vec, &n, cmp_int);
-    assert_int_equal(idx, 41);
-    assert_int_equal(*(int*)vector_get(&vec, idx), 42);
+    n = 41;
+    idx = vector_binary_search( &vec, &n, cmp_int );
+    assert_int_equal(idx, -1);
+
+    n = 0;
+    idx = vector_binary_search( &vec, &n, cmp_int );
+    assert_int_equal(idx, -1);
+
+    n = 1024;
+    idx = vector_binary_search( &vec, &n, cmp_int );
+    assert_int_equal(idx, -1);
+
+    vector_free(&vec);
+}
+
+static
+void col_vec_binary_search_range_test(void **state) {
+    (void) state;
+
+    Vector vec;
+    vector_init(&vec, 512, sizeof(int));
+
+    int n = 2;
+    for(; n < 1024; n += 2) {
+        vector_append(&vec, &n);
+    }
+    assert_int_equal(vector_count(&vec), 512);
+
+    n = 42;
+    int idx = vector_binary_search_range(&vec, &n, cmp_int, 0, 512);
+    assert_int_equal(idx, 21);
+    assert_int_equal(*(int*)vector_get(&vec, idx), n);
+
+    assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, 0, idx+1), idx );
+    assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, idx, 512), idx );
+    assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, idx, idx+1), idx );
+    assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, 0, 2*512), idx );
+
+    assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, 0, idx), -1 );
+    assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, idx, idx), -1 );
+    assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, idx+1, 512), -1 );
+    
+    n = 41;
+    idx = vector_binary_search_range( &vec, &n, cmp_int, 0, 512 );
+    assert_int_equal(idx, -1);
+
+    n = 0;
+    idx = vector_binary_search_range( &vec, &n, cmp_int, 0, 512 );
+    assert_int_equal(idx, -1);
+
+    n = 1024;
+    idx = vector_binary_search( &vec, &n, cmp_int, 0, 512 );
+    assert_int_equal(idx, -1);
 
     vector_free(&vec);
 }
@@ -351,7 +402,8 @@ int main() {
         cmocka_unit_test(col_vec_find_test),
         cmocka_unit_test(col_vec_count_test),
         cmocka_unit_test(col_vec_add_test),
-        cmocka_unit_test(col_vec_binary_find_test),
+        cmocka_unit_test(col_vec_binary_search_test),
+        cmocka_unit_test(col_vec_binary_search_range_test),
         cmocka_unit_test(col_vec_range_remove_test),
     };
 

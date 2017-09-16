@@ -87,10 +87,12 @@ int broker_handle_req(RemoteDSLink *link, json_t *req) {
 }
 
 static
-int broker_handle_resp(RemoteDSLink *link, json_t *resp) {
+int broker_handle_resp(RemoteDSLink *link, json_t *resp, json_t *responder_msg_id) {
+    int result = 1;
+
     json_t *jRid = json_object_get(resp, "rid");
     if (!jRid) {
-        return 1;
+        return result;
     }
 
     uint32_t rid = (uint32_t) json_integer_value(jRid);
@@ -110,7 +112,7 @@ int broker_handle_resp(RemoteDSLink *link, json_t *resp) {
                 }
 
                 BrokerSubStream *s = ref->data;
-                broker_update_sub_stream(s, update);
+                result &= broker_update_sub_stream(s, update, responder_msg_id);
             } else if (json_is_object(update)) {
                 json_t *jSid = json_object_get(update, "sid");
                 if (!jSid) {
@@ -125,16 +127,16 @@ int broker_handle_resp(RemoteDSLink *link, json_t *resp) {
                 BrokerSubStream *s = ref->data;
                 json_t *value = json_object_get(update, "value");
                 json_t *ts = json_object_get(update, "ts");
-                broker_update_sub_stream_value(s, value, ts);
+                result &= broker_update_sub_stream_value(s, value, ts, responder_msg_id);
             }
 
         }
-        return 1;
+        return result;
     }
 
     ref_t *ref = dslink_map_get(&link->responder_streams, &rid);
     if (!ref) {
-        return 1;
+        return result;
     }
 
     BrokerStream *stream = ref->data;
@@ -161,7 +163,7 @@ int broker_handle_resp(RemoteDSLink *link, json_t *resp) {
         }
     }
 
-    return 1;
+    return result;
 }
 
 void broker_msg_handle(RemoteDSLink *link,
@@ -197,7 +199,7 @@ void broker_msg_handle(RemoteDSLink *link,
         json_t *resp;
         size_t index = 0;
         json_array_foreach(resps, index, resp) {
-            sendAckOk &= broker_handle_resp(link, resp);
+	  sendAckOk &= broker_handle_resp(link, resp, msg);
         }
     }
 

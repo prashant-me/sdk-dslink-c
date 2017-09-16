@@ -332,7 +332,7 @@ void broker_node_update_value(BrokerNode *node, json_t *value, uint8_t isNewValu
         json_incref(value);
     }
     if (node->sub_stream) {
-        broker_update_sub_stream_value(node->sub_stream, value, NULL);
+      broker_update_sub_stream_value(node->sub_stream, value, NULL, NULL);
     }
     listener_dispatch_message(&node->on_value_update, node);
 }
