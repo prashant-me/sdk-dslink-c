@@ -21,7 +21,7 @@ int check_subscription_ack(struct Broker* broker, uint32_t ack)
             SubRequester* subReq = (SubRequester*)entry->value->data;
             if(subReq->qos > 0) {
                 int idx = vector_find(subReq->pendingAcks, ack, cmp_int);
-                if(idx >= 0) {
+                if(idx >= 0 && subReq->reqSid > 0) {
                     vector_remove(subReq->pendingAcks, idx);
                     goto ready;
                 }
@@ -29,7 +29,7 @@ int check_subscription_ack(struct Broker* broker, uint32_t ack)
         }
         dslink_map_foreach(&node->resp_sub_sids) {
             SubRequester* subReq = (SubRequester*)entry->value->data;
-            if(subReq->qos > 0) {
+            if(subReq->qos > 0 && subReq->reqSid > 0) {
                 int idx = vector_find(subReq->pendingAcks, ack, cmp_int);
                 if(idx >= 0) {
                     vector_remove(subReq->pendingAcks, idx);
@@ -38,6 +38,8 @@ int check_subscription_ack(struct Broker* broker, uint32_t ack)
             }
         }
     }
+
+    return 0;
 
 ready:
 
