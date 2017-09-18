@@ -30,10 +30,10 @@ int broker_msg_handle_close(RemoteDSLink *link, json_t *req) {
 }
 
 static
-void broker_handle_req(RemoteDSLink *link, json_t *req) {
+int broker_handle_req(RemoteDSLink *link, json_t *req) {
     json_t *jRid = json_object_get(req, "rid");
     if (!jRid) {
-        return;
+        return 1;
     }
 
     const char *method = json_string_value(json_object_get(req, "method"));
@@ -45,11 +45,11 @@ void broker_handle_req(RemoteDSLink *link, json_t *req) {
             json_t *params = json_object_get(req, "params");
             stream->continuous_invoke(link,  params);
         }
-        return;
+        return 1;
     }
 
     if (!method) {
-        return;
+        return 1;
     }
     if (strcmp(method, "list") == 0) {
         if (broker_msg_handle_list(link, req) != 0) {
@@ -82,13 +82,15 @@ void broker_handle_req(RemoteDSLink *link, json_t *req) {
     } else {
         log_err("Method unhandled: %s\n", method);
     }
+
+    return 1;
 }
 
 static
-void broker_handle_resp(RemoteDSLink *link, json_t *resp) {
+int broker_handle_resp(RemoteDSLink *link, json_t *resp) {
     json_t *jRid = json_object_get(resp, "rid");
     if (!jRid) {
-        return;
+        return 1;
     }
 
     uint32_t rid = (uint32_t) json_integer_value(jRid);
@@ -127,12 +129,12 @@ void broker_handle_resp(RemoteDSLink *link, json_t *resp) {
             }
 
         }
-        return;
+        return 1;
     }
 
     ref_t *ref = dslink_map_get(&link->responder_streams, &rid);
     if (!ref) {
-        return;
+        return 1;
     }
 
     BrokerStream *stream = ref->data;
@@ -158,6 +160,8 @@ void broker_handle_resp(RemoteDSLink *link, json_t *resp) {
             }
         }
     }
+
+    return 1;
 }
 
 void broker_msg_handle(RemoteDSLink *link,
@@ -167,23 +171,16 @@ void broker_msg_handle(RemoteDSLink *link,
     }
     json_incref(data);
 
-    json_t *ack = json_object_get(data, "ack");
-    if(ack && json_is_integer(ack)) {
-        log_debug("Received ack for msg %d\n", (uint32_t)json_integer_value(ack));
-    }
-
     json_t *reqs = json_object_get(data, "requests");
     json_t *resps = json_object_get(data, "responses");
 
+    int sendAckOk = 0;
+    json_t *msg = NULL;
     if (reqs || resps) {
-        json_t *msg = json_object_get(data, "msg");
+        msg = json_object_get(data, "msg");
         if (json_is_integer(msg)) {
-            json_t *obj = json_object();
-            if (obj) {
-                json_object_set_nocheck(obj, "ack", msg);
-                broker_ws_send_obj(link, obj);
-                json_decref(obj);
-            }
+            check_subscription_ack(link->broker, json_integer_value(msg));
+            sendAckOk = 1;
         }
     }
 
@@ -191,7 +188,7 @@ void broker_msg_handle(RemoteDSLink *link,
         json_t *req;
         size_t index = 0;
         json_array_foreach(reqs, index, req) {
-            broker_handle_req(link, req);
+            sendAckOk &= broker_handle_req(link, req);
         }
     }
 
@@ -199,7 +196,16 @@ void broker_msg_handle(RemoteDSLink *link,
         json_t *resp;
         size_t index = 0;
         json_array_foreach(resps, index, resp) {
-            broker_handle_resp(link, resp);
+            sendAckOk &= broker_handle_resp(link, resp);
+        }
+    }
+
+    if (sendAckOk) {
+        json_t *obj = json_object();
+        if (obj) {
+            json_object_set_nocheck(obj, "ack", msg);
+            broker_ws_send_obj(link, obj);
+            json_decref(obj);
         }
     }
 
