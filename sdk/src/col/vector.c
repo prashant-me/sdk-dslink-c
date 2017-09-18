@@ -22,6 +22,15 @@ int vector_init(Vector* vec, uint32_t initial_size)
     return 0;
 }
 
+int vector_count(const Vector* vec)
+{
+    if(!vec) {
+        return 0;
+    }
+
+    return vec->size;
+}
+
 static int vector_resize(Vector* vec)
 {
     if(!vec) {
@@ -64,7 +73,7 @@ int vector_set(Vector* vec, uint32_t index, void* data)
     return 0;
 }
 
-void* vector_get(Vector* vec, uint32_t index)
+void* vector_get(const Vector* vec, uint32_t index)
 {
     if(!vec || index >= vec->size) {
         return NULL;
@@ -85,7 +94,7 @@ int vector_remove(Vector* vec, uint32_t index)
     return 0;
 }
 
-int vector_find(Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
+int vector_find(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
 {
     if(!vec && vec->size > 0) {
         return -1;

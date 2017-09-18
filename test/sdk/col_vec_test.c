@@ -161,6 +161,25 @@ void col_vec_find_test(void **state) {
     assert_int_equal((int)vector_get(&vec, idx), 42);
 }
 
+static
+void col_vec_count_test(void **state) {
+    (void) state;
+
+    assert_int_equal(vector_count(NULL), 0);
+
+    Vector vec;
+    vector_init(&vec, 10);
+
+    assert_int_equal(vector_count(&vec), 0);
+
+    vector_append(&vec, 4711);
+    vector_append(&vec, 815);
+    vector_append(&vec, 42);
+    vector_append(&vec, 66);
+
+    assert_int_equal(vector_count(&vec), 4);
+}
+
 
 int main() {
     const struct CMUnitTest tests[] = {
@@ -171,6 +190,7 @@ int main() {
         cmocka_unit_test(col_vec_remove_test),
         cmocka_unit_test(col_vec_iterate_test),
         cmocka_unit_test(col_vec_find_test),
+        cmocka_unit_test(col_vec_count_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

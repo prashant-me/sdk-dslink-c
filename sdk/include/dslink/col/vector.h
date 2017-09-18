@@ -31,6 +31,8 @@ for (void* data = (vector)->data[n]; n < (vector)->size; ++n, data = (vector)->d
     /// @return 0 if the vector could be initialized successfully, otherwise -1
     int vector_init(Vector* vec, uint32_t initial_size);
 
+    int vector_count(const Vector* vec);
+
     /// Adds a value to the end of the vector, also known as push back.
     /// @param vec The vector
     /// @param data The value to add
@@ -49,7 +51,7 @@ for (void* data = (vector)->data[n]; n < (vector)->size; ++n, data = (vector)->d
     /// @param vec The vector
     /// @param index The index to get the value for
     /// @return The value or NULL if the index is out of range.
-    void* vector_get(Vector* vec, uint32_t index);
+    void* vector_get(const Vector* vec, uint32_t index);
 
     /// Removes the value at the index and reorganizes the vector to fill the gap, thus invalidated all previous
     /// indexes. If the index is not in range, an error will be returned and the
@@ -64,7 +66,7 @@ for (void* data = (vector)->data[n]; n < (vector)->size; ++n, data = (vector)->d
     /// @param data The data to find
     /// @param cmp_fn The compare function to use
     /// @return The index (>= 0) of the value if found, -1 otherwise
-    int vector_find(Vector* vec, void* data, vector_comparison_fn_type cmp_fn);
+    int vector_find(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn);
 
     /// Frees the internally allocated memory of the vector. Does not free the memory pointed to by the elements.
     /// @param vec The vector
