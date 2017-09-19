@@ -63,6 +63,14 @@ for (void* data = (vector)->data; n < (vector)->size; ++n, data = (char*)(vector
     /// @return 0 upon success, -1 otherwise
     int vector_remove(Vector* vec, uint32_t index);
 
+    /// Removes the value at the index and reorganizes the vector to fill the gap, thus invalidated all previous
+    /// indexes. If the index is not in range, an error will be returned and the
+    /// vector remains unchanged.
+    /// @param vec The vector
+    /// @param index The index to remove the value from
+    /// @return 0 upon success, -1 otherwise
+    int vector_remove_range(Vector* vec, uint32_t lower, uint32_t upper);
+
     /// Searches the vector for the data using the given comparison function.
     /// @param vec The vector
     /// @param data The data to find

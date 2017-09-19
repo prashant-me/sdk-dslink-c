@@ -89,13 +89,36 @@ void* vector_get(const Vector* vec, uint32_t index)
 
 int vector_remove(Vector* vec, uint32_t index)
 {
-    if(!vec || index >= vec->size) {
+    if(!vec || index >= vec->size-1) {
         return -1;
     }
     if(index != vec->size-1) {
         memmove((char*)vec->data + (index*vec->element_size), (char*)vec->data + ((index+1)*vec->element_size), (vec->size-(index+1))*vec->element_size);
     }
     --(vec->size);
+
+    return 0;
+}
+
+int vector_remove_range(Vector* vec, uint32_t lower, uint32_t upper)
+{
+    if(!vec || lower > vec->size-1 || lower >= upper) {
+        return -1;
+    }
+
+    if(upper > vec->size-1) {
+        upper = vec->size-1;
+    }
+
+    if(lower == 0 && upper == vec->size) {
+        vec->size = 0;
+        return 0;
+    }
+
+    if(upper < vec->size-1) {
+        memmove((char*)vec->data + (lower*vec->element_size), (char*)vec->data + ((upper+1)*vec->element_size), (vec->size-(upper-lower))*vec->element_size);
+    }
+    vec->size -= (upper - lower)+1;
 
     return 0;
 }

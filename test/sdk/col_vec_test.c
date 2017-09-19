@@ -269,6 +269,77 @@ void col_vec_binary_find_test(void **state) {
     vector_free(&vec);
 }
 
+static
+void col_vec_range_remove_test(void **state) {
+    (void) state;
+
+    {
+        Vector vec;
+        vector_init(&vec, 10, sizeof(int));
+
+        int n = 0;
+        for(; n < 1024; ++n) {
+            vector_append(&vec, &n);
+        }
+
+        vector_remove_range(&vec, 0, 1000);
+
+        assert_int_equal(vector_count(&vec), 23);
+
+        assert_int_equal(*(int*)vector_get(&vec, 0), 1001);
+        assert_int_equal(*(int*)vector_get(&vec, 22), 1023);
+
+        vector_free(&vec);
+    }
+    {
+        Vector vec;
+        vector_init(&vec, 10, sizeof(int));
+
+        int n = 0;
+        for(; n < 1024; ++n) {
+            vector_append(&vec, &n);
+        }
+
+        vector_remove_range(&vec, 500, 900);
+
+        assert_int_equal(vector_count(&vec), 623);
+        assert_int_equal(*(int*)vector_get(&vec, 0), 0);
+        assert_int_equal(*(int*)vector_get(&vec, 622), 1023);
+
+        vector_free(&vec);
+    }
+    {
+        Vector vec;
+        vector_init(&vec, 10, sizeof(int));
+
+        int n = 0;
+        for(; n < 1024; ++n) {
+            vector_append(&vec, &n);
+        }
+
+        vector_remove_range(&vec, 500, 2000);
+
+        assert_int_equal(vector_count(&vec), 500);
+        assert_int_equal(*(int*)vector_get(&vec, 0), 0);
+        assert_int_equal(*(int*)vector_get(&vec, 499), 499);
+
+        vector_free(&vec);
+    }
+    {
+        Vector vec;
+        vector_init(&vec, 10, sizeof(int));
+
+        int n = 1;
+        for(; n < 1024; ++n) {
+            vector_append(&vec, &n);
+        }
+
+        assert_int_equal(vector_remove_range(&vec, 2000, 500), -1);
+
+        vector_free(&vec);
+    }
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(col_vec_init_test),
@@ -281,6 +352,7 @@ int main() {
         cmocka_unit_test(col_vec_count_test),
         cmocka_unit_test(col_vec_add_test),
         cmocka_unit_test(col_vec_binary_find_test),
+        cmocka_unit_test(col_vec_range_remove_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
