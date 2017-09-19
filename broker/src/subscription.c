@@ -11,6 +11,8 @@ int cmp_pack(const void* lhs, const void* rhs)
     PendingAck* rpack = (PendingAck*)rhs;
     if(lpack->msg_id == rpack->msg_id) {
         return 0;
+    } else if(lpack->msg_id > rpack->msg_id) {
+        return 1;
     }
     return -1;
 }
@@ -19,6 +21,8 @@ int cmp_int(const void* lhs, const void* rhs)
 {
     if(*(int*)lhs == *(int*)rhs) {
         return 0;
+    } else if(*(int*)lhs > *(int*)rhs) {
+        return 1;
     }
     return -1;
 }
@@ -26,10 +30,10 @@ int cmp_int(const void* lhs, const void* rhs)
 int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
 {
     PendingAck pack = { NULL, ack };
-    int idx = vector_find(link->node->pendingAcks, &pack, cmp_pack);
+    int idx = vector_binary_search(link->node->pendingAcks, &pack, cmp_pack);
     if(idx >= 0) {
         PendingAck* pack = (PendingAck*)vector_get(link->node->pendingAcks, idx);
-        int sub_idx = vector_find(pack->subscription->pendingAcks, &ack, cmp_int);
+        int sub_idx = vector_binary_search(pack->subscription->pendingAcks, &ack, cmp_int);
         if(sub_idx >= 0) {
             vector_remove(pack->subscription->pendingAcks, sub_idx);
         }
@@ -288,7 +292,7 @@ void broker_update_sub_qos(SubRequester *req, uint8_t qos) {
     if (req->qos != qos) {
         uint8_t oldqos = req->qos;
         req->qos = qos;
-        if (oldqos & 2 && !(qos & 2)) {
+        if (oldqos ==3 && qos != 3) {
             // delete qos file
             serialize_qos_queue(req, 1);
         }
@@ -297,7 +301,7 @@ void broker_update_sub_qos(SubRequester *req, uint8_t qos) {
             req->qosQueue = json_array();
         }
         broker_update_stream_qos(req->stream);
-        if (qos & 2 && !(oldqos & 2)) {
+        if (qos == 3 && oldqos != 3) {
             // save qos file
             serialize_qos_queue(req, 0);
         }

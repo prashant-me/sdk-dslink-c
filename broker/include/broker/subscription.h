@@ -13,7 +13,6 @@ extern "C" {
 typedef struct SubRequester {
     char *path;
     DownstreamNode *reqNode;
-    DownstreamNode *respNode;
     BrokerSubStream *stream;
     uint32_t reqSid;
     uint8_t qos;
