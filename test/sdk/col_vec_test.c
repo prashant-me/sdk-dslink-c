@@ -180,6 +180,13 @@ void col_vec_find_test(void **state) {
     int idx = vector_find(&vec, &n, cmp_int);
     assert_int_equal(idx, 2);
     assert_int_equal(*(int*)vector_get(&vec, idx), 42);
+
+    n = 88;
+    idx = vector_find(&vec, &n, cmp_int);
+    assert_int_equal(idx, -1);
+
+    idx = vector_find(NULL, &n, cmp_int);
+    assert_int_equal(idx, -1);
 }
 
 static

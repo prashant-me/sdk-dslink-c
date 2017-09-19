@@ -103,7 +103,7 @@ int vector_remove(Vector* vec, uint32_t index)
 
 int vector_find(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
 {
-    if(!vec && vec->size > 0) {
+    if(!vec || vec->size == 0) {
         return -1;
     }
 
@@ -113,7 +113,7 @@ int vector_find(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
         }
     }
 
-    return 0;
+    return -1;
 }
 
 int vector_free(Vector* vec)

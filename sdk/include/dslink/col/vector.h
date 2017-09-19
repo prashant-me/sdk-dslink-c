@@ -37,7 +37,7 @@ for (void* data = (vector)->data; n < (vector)->size; ++n, data = (char*)(vector
 
     /// Adds a value to the end of the vector, also known as push back.
     /// @param vec The vector
-    /// @param data The value to add
+    /// @param data A pointer to the value to add. The value will be copied into the vector.
     /// @return The index (>= 0) upon success, -1 otherwise
     long vector_append(Vector* vec, void* data);
 
@@ -45,14 +45,14 @@ for (void* data = (vector)->data; n < (vector)->size; ++n, data = (char*)(vector
     /// vector remains unchanged.
     /// @param vec The vector
     /// @param index The index to set the value for
-    /// @param data The value to set
+    /// @param data A pointer to the value to set. The value will be copied into the vector.
     /// @return 0 upon success, -1 otherwise
     int vector_set(Vector* vec, uint32_t index, void* data);
 
     /// Gets the value at the index. If the index is not in range, an error will be returned
     /// @param vec The vector
     /// @param index The index to get the value for
-    /// @return The value or NULL if the index is out of range.
+    /// @return A pointer to the value or NULL if the index is out of range.
     void* vector_get(const Vector* vec, uint32_t index);
 
     /// Removes the value at the index and reorganizes the vector to fill the gap, thus invalidated all previous
