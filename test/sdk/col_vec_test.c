@@ -12,6 +12,8 @@ void col_vec_init_test(void **state) {
     vector_init(&vec, 10, sizeof(int));
     assert_int_equal(vec.capacity, 10);
     assert_int_equal(vec.size, 0);
+
+    vector_free(&vec);
 }
 
 static
@@ -30,6 +32,8 @@ void col_vec_append_test(void **state) {
     index = vector_append(&vec, &n);
     assert_int_equal(index, 1);
     assert_int_equal(*(int*)vector_get(&vec, index), 815);
+
+    vector_free(&vec);
 }
 
 static
@@ -53,6 +57,8 @@ void col_vec_resize_test(void **state) {
     assert_int_equal(*(int*)vector_get(&vec, index), 42);
     assert_int_equal(vec.capacity, 4);
     assert_int_equal(vec.size, 3);
+
+    vector_free(&vec);
 }
 
 static
@@ -78,6 +84,8 @@ void col_vec_set_get_test(void **state) {
     assert_int_equal(*(int*)vector_get(&vec, 1), 66);
 
     assert_null(vector_get(&vec, 2));
+
+    vector_free(&vec);
 }
 
 static
@@ -110,6 +118,8 @@ void col_vec_remove_test(void **state) {
     assert_int_equal(*(int*)vector_get(&vec, 0), 4711);
     assert_int_equal(*(int*)vector_get(&vec, 1), 42);
     assert_int_equal(*(int*)vector_get(&vec, 2), 66);
+
+    vector_free(&vec);
 }
 
 static
@@ -150,6 +160,8 @@ void col_vec_iterate_test(void **state) {
         ++count;
     }
     dslink_vector_foreach_end();
+
+    vector_free(&vec);
 }
 
 int cmp_int(const void* lhs, const void* rhs)
@@ -187,6 +199,8 @@ void col_vec_find_test(void **state) {
 
     idx = vector_find(NULL, &n, cmp_int);
     assert_int_equal(idx, -1);
+
+    vector_free(&vec);
 }
 
 static
@@ -210,8 +224,24 @@ void col_vec_count_test(void **state) {
     vector_append(&vec, &n);
 
     assert_int_equal(vector_count(&vec), 4);
+
+    vector_free(&vec);
 }
 
+static
+void col_vec_add_test(void **state) {
+    (void) state;
+
+    Vector vec;
+    vector_init(&vec, 10, sizeof(int));
+
+    int n = 1;
+    for(; n < 1024; ++n) {
+        vector_append(&vec, &n);
+    }
+
+    vector_free(&vec);
+}
 
 int main() {
     const struct CMUnitTest tests[] = {
@@ -223,6 +253,7 @@ int main() {
         cmocka_unit_test(col_vec_iterate_test),
         cmocka_unit_test(col_vec_find_test),
         cmocka_unit_test(col_vec_count_test),
+        cmocka_unit_test(col_vec_add_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

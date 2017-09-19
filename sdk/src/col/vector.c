@@ -38,11 +38,12 @@ static int vector_resize(Vector* vec)
         return -1;
     }
     if(vec->size >= vec->capacity) {
-        uint8_t cap = vec->capacity * 2;
-        void** data = dslink_realloc(vec->data, cap*vec->element_size);
+        uint32_t cap = vec->capacity * 2;
+        void* data = dslink_realloc(vec->data, cap*vec->element_size);
         if(!data) {
             return -1;
         }
+        vec->data = data;
         vec->capacity = cap;
     }
 
@@ -92,8 +93,6 @@ int vector_remove(Vector* vec, uint32_t index)
         return -1;
     }
     if(index != vec->size-1) {
-        //memmove(&vec->data[index], &vec->data[index+1], (vec->size-(index+1))*sizeof(vec->data));
-
         memmove((char*)vec->data + (index*vec->element_size), (char*)vec->data + ((index+1)*vec->element_size), (vec->size-(index+1))*vec->element_size);
     }
     --(vec->size);
