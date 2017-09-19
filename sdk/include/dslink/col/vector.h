@@ -70,6 +70,14 @@ for (void* data = (vector)->data; n < (vector)->size; ++n, data = (char*)(vector
     /// @return The index (>= 0) of the value if found, -1 otherwise
     int vector_find(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn);
 
+    /// Searches the vector for the data using the given comparison function and a binary search algorithm. The vector
+    /// has to be sorted in order to work.
+    /// @param vec The vector
+    /// @param data The data to find
+    /// @param cmp_fn The compare function to use
+    /// @return The index (>= 0) of the value if found, -1 otherwise
+    int vector_binary_search(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn);
+
     /// Frees the internally allocated memory of the vector. Does not free the memory pointed to by the elements.
     /// @param vec The vector
     /// @return 0 upon success, -1 otherwise

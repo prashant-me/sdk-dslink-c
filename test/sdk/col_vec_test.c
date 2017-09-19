@@ -168,6 +168,8 @@ int cmp_int(const void* lhs, const void* rhs)
 {
     if(*(int*)lhs == *(int*)rhs) {
         return 0;
+    } else if(*(int*)lhs > *(int*)rhs) {
+        return 1;
     }
     return -1;
 }
@@ -243,6 +245,30 @@ void col_vec_add_test(void **state) {
     vector_free(&vec);
 }
 
+static
+void col_vec_binary_find_test(void **state) {
+    (void) state;
+
+    Vector vec;
+    vector_init(&vec, 10, sizeof(int));
+
+    int n = 1;
+    for(; n < 1024; ++n) {
+        vector_append(&vec, &n);
+    }
+
+    n = 42;
+    int idx = vector_find(&vec, &n, cmp_int);
+    assert_int_equal(idx, 41);
+    assert_int_equal(*(int*)vector_get(&vec, idx), 42);
+
+    idx = vector_binary_search(&vec, &n, cmp_int);
+    assert_int_equal(idx, 41);
+    assert_int_equal(*(int*)vector_get(&vec, idx), 42);
+
+    vector_free(&vec);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(col_vec_init_test),
@@ -254,6 +280,7 @@ int main() {
         cmocka_unit_test(col_vec_find_test),
         cmocka_unit_test(col_vec_count_test),
         cmocka_unit_test(col_vec_add_test),
+        cmocka_unit_test(col_vec_binary_find_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

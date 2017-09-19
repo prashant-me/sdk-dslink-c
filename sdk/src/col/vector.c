@@ -115,6 +115,30 @@ int vector_find(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
     return -1;
 }
 
+int vector_binary_search(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
+{
+    if(!vec || vec->size == 0) {
+        return -1;
+    }
+
+    uint32_t l = 0;
+    uint32_t r = vec->size - 1;
+    uint32_t m = 0;
+    while(l < r) {
+        m = (l + r) / 2;
+        int res = cmp_fn(data, (char*)vec->data + (m*vec->element_size));
+        if(res == 0) {
+            return m;
+        } else if(res > 0) {
+            l = m + 1;
+        } else {
+            r = m - 1;
+        }
+    }
+
+    return -1;
+}
+
 int vector_free(Vector* vec)
 {
     if(!vec) {
