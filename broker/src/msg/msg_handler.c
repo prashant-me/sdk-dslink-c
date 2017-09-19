@@ -175,13 +175,14 @@ void broker_msg_handle(RemoteDSLink *link,
     json_t *resps = json_object_get(data, "responses");
 
     int sendAckOk = 0;
-    json_t *msg = NULL;
-    if (reqs || resps) {
-        msg = json_object_get(data, "msg");
-        if (json_is_integer(msg)) {
-            check_subscription_ack(link->broker, json_integer_value(msg));
-            sendAckOk = 1;
-        }
+    json_t *msg = json_object_get(data, "msg");
+    if (json_is_integer(msg)) {
+        sendAckOk = 1;
+    }
+
+    json_t *ack = json_object_get(data, "ack");
+    if(json_is_integer(ack)) {
+        check_subscription_ack(link, json_integer_value(ack));
     }
 
     if (link->isRequester && reqs) {

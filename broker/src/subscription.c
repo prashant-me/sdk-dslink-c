@@ -5,31 +5,36 @@
 #include <broker/broker.h>
 
 
-int cmp_int(const void* lhs, const void* rhs)
+int cmp_pack(const void* lhs, const void* rhs)
 {
-    if((int)lhs == (int)rhs) {
+    PendingAck* lpack = (PendingAck*)lhs;
+    PendingAck* rpack = (PendingAck*)rhs;
+    if(lpack->msg_id == rpack->msg_id) {
         return 0;
     }
     return -1;
 }
 
-int check_subscription_ack(struct Broker* broker, uint32_t ack)
+int cmp_int(const void* lhs, const void* rhs)
 {
-    dslink_map_foreach(broker->downstream->children) {
-        DownstreamNode* node = (DownstreamNode*)entry->value->data;
-        dslink_map_foreach(&node->resp_sub_streams) {
-            BrokerSubStream* substream = (BrokerSubStream*)entry->value->data;
-            dslink_map_foreach(&substream->reqSubs) {
-                SubRequester* subReq = (SubRequester*)entry->value->data;
-                if(subReq->qos > 0 && subReq->pendingAcks) {
-                    int idx = vector_find(subReq->pendingAcks, ack, cmp_int);
-                    if(idx >= 0) {
-                        vector_remove(subReq->pendingAcks, idx);
-                        goto ready;
-                    }
-                }
-            }
+    if(*(int*)lhs == *(int*)rhs) {
+        return 0;
+    }
+    return -1;
+}
+
+int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
+{
+    PendingAck pack = { NULL, ack };
+    int idx = vector_find(link->node->pendingAcks, &pack, cmp_pack);
+    if(idx >= 0) {
+        PendingAck* pack = (PendingAck*)vector_get(link->node->pendingAcks, idx);
+        int sub_idx = vector_find(pack->subscription->pendingAcks, &ack, cmp_int);
+        if(sub_idx >= 0) {
+            vector_remove(pack->subscription->pendingAcks, sub_idx);
         }
+        vector_remove(link->node->pendingAcks, idx);
+        goto ready;
     }
 
     return 0;
@@ -194,7 +199,19 @@ void broker_update_sub_req(SubRequester *subReq, json_t *varray) {
                 subReq->pendingAcks = (Vector*)dslink_malloc(sizeof(Vector));
                 vector_init(subReq->pendingAcks, 64, sizeof(int));
             }
-            vector_append(subReq->pendingAcks, msgid);
+            vector_append(subReq->pendingAcks, &msgid);
+
+            DownstreamNode* node = (DownstreamNode*)(subReq->reqNode->link->node);
+            if(!node->pendingAcks) {
+                node->pendingAcks = (Vector*)dslink_malloc(sizeof(Vector));
+                vector_init(node->pendingAcks, 64, sizeof(PendingAck));
+            }
+            PendingAck pack = { subReq, msgid };
+            vector_append(node->pendingAcks, &pack);
+
+            if(vector_count(node->pendingAcks) > 8) {
+                printf("Houston, we have a problem!\n");
+            }
         }
 
         json_decref(top);

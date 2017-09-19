@@ -7,6 +7,8 @@ extern "C" {
 
 #include "broker/remote_dslink.h"
 
+#include <dslink/col/vector.h>
+
 struct RemoteDSLink;
 struct BrokerNode;
 struct UpstreamPoll;
@@ -95,6 +97,8 @@ typedef struct DownstreamNode {
 
     Dispatcher on_link_connected;
     Dispatcher on_link_disconnected;
+
+    Vector* pendingAcks;
 } DownstreamNode;
 
 BrokerNode *broker_node_get(BrokerNode *root,
@@ -104,7 +108,7 @@ BrokerNode *broker_node_createl(const char *name, size_t nameLen,
                                 const char *profile, size_t profileLen);
 
 // when newValue is 1, node won't add ref count on value
-void  broker_node_update_value(BrokerNode *node, json_t *value, uint8_t isNewValue);
+void broker_node_update_value(BrokerNode *node, json_t *value, uint8_t isNewValue);
 
 int broker_node_add(BrokerNode *parent, BrokerNode *child);
 

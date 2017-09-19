@@ -25,6 +25,12 @@ typedef struct SubRequester {
     Vector* pendingAcks;
 } SubRequester;
 
+
+typedef struct PendingAck {
+    SubRequester* subscription;
+    uint32_t msg_id;
+} PendingAck;
+
 void send_subscribe_request(DownstreamNode *node,
                             const char *path,
                             uint32_t sid,
@@ -45,7 +51,7 @@ void broker_update_stream_qos(BrokerSubStream *stream);
 void broker_update_sub_qos(SubRequester *req, uint8_t qos);
 void serialize_qos_queue(SubRequester *subReq, uint8_t delete);
 
-int check_subscription_ack(struct Broker* broker, uint32_t ack);
+int check_subscription_ack(RemoteDSLink *link, uint32_t ack);
 
 #ifdef __cplusplus
 }

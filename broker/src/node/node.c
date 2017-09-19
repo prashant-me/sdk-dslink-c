@@ -137,7 +137,6 @@ DownstreamNode *broker_init_downstream_node(BrokerNode *parentNode, const char *
     }
     node->type = DOWNSTREAM_NODE;
 
-
     if (dslink_map_init(&node->list_streams, dslink_map_str_cmp,
                         dslink_map_str_key_len_cal, dslink_map_hash_key) != 0
         || dslink_map_init(&node->children_permissions, dslink_map_str_cmp,
@@ -187,7 +186,9 @@ DownstreamNode *broker_init_downstream_node(BrokerNode *parentNode, const char *
         goto fail;
     }
     node->parent = parentNode;
+    node->pendingAcks = NULL;
     broker_node_update_child(parentNode, name);
+
     return node;
 
 fail:
@@ -280,6 +281,8 @@ void broker_node_free(BrokerNode *node) {
         dslink_map_free(&dnode->resp_sub_streams);
         listener_remove_all(&dnode->on_link_connected);
         listener_remove_all(&dnode->on_link_disconnected);
+        vector_free(dnode->pendingAcks);
+        dslink_free(dnode->pendingAcks);
     } else {
         // TODO: add a new type for these listeners
         // they shouldn't be part of base node type
