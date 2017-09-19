@@ -17,23 +17,16 @@ int check_subscription_ack(struct Broker* broker, uint32_t ack)
 {
     dslink_map_foreach(broker->downstream->children) {
         DownstreamNode* node = (DownstreamNode*)entry->value->data;
-        dslink_map_foreach(&node->req_sub_sids) {
-            SubRequester* subReq = (SubRequester*)entry->value->data;
-            if(subReq->qos > 0) {
-                int idx = vector_find(subReq->pendingAcks, ack, cmp_int);
-                if(idx >= 0 && subReq->reqSid > 0) {
-                    vector_remove(subReq->pendingAcks, idx);
-                    goto ready;
-                }
-            }
-        }
-        dslink_map_foreach(&node->resp_sub_sids) {
-            SubRequester* subReq = (SubRequester*)entry->value->data;
-            if(subReq->qos > 0 && subReq->reqSid > 0) {
-                int idx = vector_find(subReq->pendingAcks, ack, cmp_int);
-                if(idx >= 0) {
-                    vector_remove(subReq->pendingAcks, idx);
-                    goto ready;
+        dslink_map_foreach(&node->resp_sub_streams) {
+            BrokerSubStream* substream = (BrokerSubStream*)entry->value->data;
+            dslink_map_foreach(&substream->reqSubs) {
+                SubRequester* subReq = (SubRequester*)entry->value->data;
+                if(subReq->qos > 0 && subReq->pendingAcks) {
+                    int idx = vector_find(subReq->pendingAcks, ack, cmp_int);
+                    if(idx >= 0) {
+                        vector_remove(subReq->pendingAcks, idx);
+                        goto ready;
+                    }
                 }
             }
         }
@@ -140,6 +133,7 @@ void broker_free_sub_requester(SubRequester *req) {
     if(req->pendingAcks) {
         vector_free(req->pendingAcks);
         dslink_free(req->pendingAcks);
+      req->pendingAcks = NULL;
     }
 
     dslink_free(req->path);
@@ -198,7 +192,7 @@ void broker_update_sub_req(SubRequester *subReq, json_t *varray) {
         if(subReq->qos > 0) {
             if(!subReq->pendingAcks) {
                 subReq->pendingAcks = (Vector*)dslink_malloc(sizeof(Vector));
-                vector_init(subReq->pendingAcks, 64);
+                vector_init(subReq->pendingAcks, 64, sizeof(int));
             }
             vector_append(subReq->pendingAcks, msgid);
         }
@@ -262,7 +256,9 @@ void broker_update_stream_qos(BrokerSubStream *stream) {
         // recalculate remoteQos;
         dslink_map_foreach(&stream->reqSubs) {
             SubRequester *reqSub = entry->value->data;
-            maxQos |= reqSub->qos;
+          if(maxQos < reqSub->qos) {
+              maxQos = reqSub->qos;
+          }
         }
         if (maxQos != stream->respQos && ((DownstreamNode*)stream->respNode)->link) {
             stream->respQos = maxQos;
@@ -270,6 +266,7 @@ void broker_update_stream_qos(BrokerSubStream *stream) {
         }
     }
 }
+
 void broker_update_sub_qos(SubRequester *req, uint8_t qos) {
     if (req->qos != qos) {
         uint8_t oldqos = req->qos;

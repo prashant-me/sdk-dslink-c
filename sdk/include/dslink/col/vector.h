@@ -16,20 +16,22 @@ extern "C" {
     typedef struct {
         uint32_t size;
         uint32_t capacity;
-        void** data;
+        void* data;
+        size_t element_size;
     } Vector;
 
 #define dslink_vector_foreach(vector) {\
 uint32_t n = 0;\
-for (void* data = (vector)->data[n]; n < (vector)->size; ++n, data = (vector)->data[n])
+for (void* data = (vector)->data; n < (vector)->size; ++n, data = (char*)(vector)->data+(n*(vector)->element_size))
 
 #define dslink_vector_foreach_end() }
 
     /// Initializes a vector.
     /// @param vec The vector to initialize
     /// @param initial_size The initial element capacity of the vector
+    /// @param element_size Size of a single element.
     /// @return 0 if the vector could be initialized successfully, otherwise -1
-    int vector_init(Vector* vec, uint32_t initial_size);
+    int vector_init(Vector* vec, uint32_t initial_size, size_t element_size);
 
     int vector_count(const Vector* vec);
 
