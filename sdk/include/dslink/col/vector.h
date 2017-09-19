@@ -55,7 +55,7 @@ for (void* data = (vector)->data; n < (vector)->size; ++n, data = (char*)(vector
     /// @return A pointer to the value or NULL if the index is out of range.
     void* vector_get(const Vector* vec, uint32_t index);
 
-    /// Removes the value at the index and reorganizes the vector to fill the gap, thus invalidated all previous
+    /// Removes the value at the index and reorganizes the vector to fill the gap, thus invalidating all previous
     /// indexes. If the index is not in range, an error will be returned and the
     /// vector remains unchanged.
     /// @param vec The vector
@@ -63,11 +63,12 @@ for (void* data = (vector)->data; n < (vector)->size; ++n, data = (char*)(vector
     /// @return 0 upon success, -1 otherwise
     int vector_remove(Vector* vec, uint32_t index);
 
-    /// Removes the value at the index and reorganizes the vector to fill the gap, thus invalidated all previous
-    /// indexes. If the index is not in range, an error will be returned and the
+    /// Removes the values between the [lower, upper] range and reorganizes the vector to fill the gap, thus
+    /// invalidating all previous indexes. If the [lower, upper] range is not in range, an error will be returned and the
     /// vector remains unchanged.
     /// @param vec The vector
-    /// @param index The index to remove the value from
+    /// @param lower The lower bound to remove from
+    /// @param upper The upper bound to remove from
     /// @return 0 upon success, -1 otherwise
     int vector_remove_range(Vector* vec, uint32_t lower, uint32_t upper);
 
