@@ -210,7 +210,7 @@ void handle_subscribe(RemoteDSLink *link, json_t *sub) {
     }
 
     SubRequester *subreq = broker_create_sub_requester(reqNode, path, sid, qos, NULL);
-    if (qos & 2) {
+    if (qos > 2) {
         serialize_qos_queue(subreq, 0);
     }
     broker_add_new_subscription(link->broker, subreq);

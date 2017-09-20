@@ -171,7 +171,7 @@ void broker_free_sub_requester(SubRequester *req) {
             broker_stream_free((BrokerStream *)req->stream);
         }
     }
-    if (req->qos & 2) {
+    if (req->qos > 2) {
         serialize_qos_queue(req, 1);
         dslink_storage_store(((Broker *)mainLoop->data)->storage, req->reqNode->path, req->path, NULL, NULL, NULL);
     }
@@ -194,7 +194,7 @@ void broker_free_sub_requester(SubRequester *req) {
 
 void clear_qos_queue(SubRequester *subReq, uint8_t serialize) {
     json_array_clear(subReq->qosQueue);
-    if (serialize && subReq->qos & 2) {
+    if (serialize && subReq->qos > 2) {
         serialize_qos_queue(subReq, 0);
     }
 }
