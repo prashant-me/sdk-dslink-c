@@ -336,6 +336,8 @@ void broker_update_stream_qos(BrokerSubStream *stream) {
         if (maxQos != stream->respQos && ((DownstreamNode*)stream->respNode)->link) {
             stream->respQos = maxQos;
             send_subscribe_request((DownstreamNode*)stream->respNode, stream->remote_path, stream->respSid, stream->respQos);
+        } else {
+            stream->respQos = maxQos;
         }
     }
 }

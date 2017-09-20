@@ -21,7 +21,6 @@ typedef void (*on_invocation_cb)(struct RemoteDSLink *link,
                                  PermissionLevel maxPermission);
 
 typedef enum BrokerNodeType {
-
     REGULAR_NODE = 0,
     DOWNSTREAM_NODE
 } BrokerNodeType;
@@ -40,7 +39,6 @@ typedef struct BrokerNodeBase {
 } BrokerNodeBase;
 
 typedef struct BrokerNode {
-
     BROKER_NODE_FIELDS;
 
     struct BrokerListStream *list_stream;
@@ -63,7 +61,6 @@ typedef struct VirtualDownstreamNode {
 } VirtualDownstreamNode;
 
 typedef struct DownstreamNode {
-
     BROKER_NODE_FIELDS;
 
     struct RemoteDSLink *link;
@@ -72,7 +69,7 @@ typedef struct DownstreamNode {
 
     json_t *groups;
 
-    // Map<char *, Stream *>
+    // Map<char *, BrokerListStream *>
     Map list_streams;
 
     uint32_t rid;
