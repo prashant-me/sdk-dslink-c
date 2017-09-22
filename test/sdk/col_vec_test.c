@@ -253,14 +253,14 @@ void col_vec_binary_search_test(void **state) {
     vector_init(&vec, 512, sizeof(int));
 
     int n = 2;
-    for(; n < 1024; n += 2) {
+    for(; n <= 1024; n += 2) {
         vector_append(&vec, &n);
     }
     assert_int_equal(vector_count(&vec), 512);
 
     n = 42;
     int idx = vector_binary_search(&vec, &n, cmp_int);
-    assert_int_equal(idx, 21);
+    assert_int_equal(idx, 20);
     assert_int_equal(*(int*)vector_get(&vec, idx), n);
 
     n = 41;
@@ -271,7 +271,7 @@ void col_vec_binary_search_test(void **state) {
     idx = vector_binary_search( &vec, &n, cmp_int );
     assert_int_equal(idx, -1);
 
-    n = 1024;
+    n = 1025;
     idx = vector_binary_search( &vec, &n, cmp_int );
     assert_int_equal(idx, -1);
 
@@ -286,14 +286,14 @@ void col_vec_binary_search_range_test(void **state) {
     vector_init(&vec, 512, sizeof(int));
 
     int n = 2;
-    for(; n < 1024; n += 2) {
+    for(; n <= 1024; n += 2) {
         vector_append(&vec, &n);
     }
     assert_int_equal(vector_count(&vec), 512);
 
     n = 42;
     int idx = vector_binary_search_range(&vec, &n, cmp_int, 0, 512);
-    assert_int_equal(idx, 21);
+    assert_int_equal(idx, 20);
     assert_int_equal(*(int*)vector_get(&vec, idx), n);
 
     assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, 0, idx+1), idx );
@@ -314,9 +314,49 @@ void col_vec_binary_search_range_test(void **state) {
     idx = vector_binary_search_range( &vec, &n, cmp_int, 0, 512 );
     assert_int_equal(idx, -1);
 
-    n = 1024;
+    n = 1025;
     idx = vector_binary_search_range( &vec, &n, cmp_int, 0, 512 );
     assert_int_equal(idx, -1);
+
+    vector_free(&vec);
+}
+
+static
+void col_vec_upper_bound_test(void **state) {
+    (void) state;
+
+    int n = 2;
+
+    assert_int_equal( vector_upper_bound(NULL, &n, cmp_int), 0 );
+
+    Vector vec;
+    vector_init(&vec, 512, sizeof(int));
+
+    assert_int_equal( vector_upper_bound(&vec, &n, cmp_int), 0 );
+
+    for(; n <= 1024; n += 2) {
+        vector_append(&vec, &n);
+    }
+    assert_int_equal(vector_count(&vec), 512);
+
+
+    n = 42;
+    int idx = vector_upper_bound(&vec, &n, cmp_int);
+    assert_int_equal(idx, 21);
+    assert_int_equal(*(int*)vector_get(&vec, idx), 44);
+
+    n = 41;
+    idx = vector_upper_bound( &vec, &n, cmp_int );
+    assert_int_equal(idx, 20);
+    assert_int_equal(*(int*)vector_get(&vec, idx), 42);
+
+    n = 0;
+    idx = vector_upper_bound( &vec, &n, cmp_int );
+    assert_int_equal(idx, 0);
+
+    n = 1025;
+    idx = vector_upper_bound( &vec, &n, cmp_int );
+    assert_int_equal(idx, 512);
 
     vector_free(&vec);
 }
@@ -336,10 +376,10 @@ void col_vec_range_remove_test(void **state) {
 
         vector_remove_range(&vec, 0, 1000);
 
-        assert_int_equal(vector_count(&vec), 23);
+        assert_int_equal(vector_count(&vec), 24);
 
-        assert_int_equal(*(int*)vector_get(&vec, 0), 1001);
-        assert_int_equal(*(int*)vector_get(&vec, 22), 1023);
+        assert_int_equal(*(int*)vector_get(&vec, 0), 1000);
+        assert_int_equal(*(int*)vector_get(&vec, 23), 1023);
 
         vector_free(&vec);
     }
@@ -352,7 +392,7 @@ void col_vec_range_remove_test(void **state) {
             vector_append(&vec, &n);
         }
 
-        vector_remove_range(&vec, 500, 900);
+        vector_remove_range(&vec, 500, 901);
 
         assert_int_equal(vector_count(&vec), 623);
         assert_int_equal(*(int*)vector_get(&vec, 0), 0);
@@ -369,7 +409,7 @@ void col_vec_range_remove_test(void **state) {
             vector_append(&vec, &n);
         }
 
-        vector_remove_range(&vec, 500, 2000);
+        vector_remove_range(&vec, 500, 2001);
 
         assert_int_equal(vector_count(&vec), 500);
         assert_int_equal(*(int*)vector_get(&vec, 0), 0);
@@ -405,6 +445,7 @@ int main() {
         cmocka_unit_test(col_vec_add_test),
         cmocka_unit_test(col_vec_binary_search_test),
         cmocka_unit_test(col_vec_binary_search_range_test),
+        cmocka_unit_test(col_vec_upper_bound_test),
         cmocka_unit_test(col_vec_range_remove_test),
     };
 

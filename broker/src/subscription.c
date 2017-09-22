@@ -43,23 +43,24 @@ int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
 {
     PendingAck search_pack = { NULL, ack };
     log_info("Receiving ack from %s: %d\n", link->name, ack);
-    int last = vector_upper_bound(link->node->pendingAcks, &search_pack, cmp_pack);
 
-    for (int idx = last-1; idx >= 0; --idx) { 
+    uint32_t last = vector_upper_bound(link->node->pendingAcks, &search_pack, cmp_pack);
+
+    for (long idx = (long)last-1; idx >= 0; --idx) { 
       PendingAck pack = *(PendingAck*)vector_get(link->node->pendingAcks, idx);
       SubRequester *subReq = pack.subscription;
-
+      
       int sub_idx = vector_binary_search(subReq->pendingAcks, &pack.msg_id, cmp_int);
       if(sub_idx >= 0) {
 	vector_remove_range(subReq->pendingAcks, 0, sub_idx+1);
       }
-
+      
       if ( removeFromMessageQueue(subReq, pack.msg_id) ) { 
 	sendQueuedMessages(subReq);
       }      
     }
     vector_remove_range(link->node->pendingAcks, 0, last);
-
+    return 0;
 /*  We dont want to keep outstanding ACKs to the responder
             // TODO: Use configurable ack queue
             if( vector_count(subReq->pendingAcks) <= PENDING_ACK_MAX && stream->last_pending_responder_msg_id ) {
@@ -86,7 +87,6 @@ int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
             }
 */
     
-    return 0;
 }
 
 
@@ -243,13 +243,11 @@ void broker_update_sub_req_qos(SubRequester *subReq) {
 
 static int addPendingAck(SubRequester *subReq, uint32_t msgId)
 {
-    if(subReq->qos > 0) {
-        if(!subReq->pendingAcks) {
-            subReq->pendingAcks = (Vector*)dslink_malloc(sizeof(Vector));
-            vector_init(subReq->pendingAcks, 64, sizeof(int));
-        }
-        vector_append(subReq->pendingAcks, &msgId);
+    if(!subReq->pendingAcks) {
+        subReq->pendingAcks = (Vector*)dslink_malloc(sizeof(Vector));
+	vector_init(subReq->pendingAcks, 64, sizeof(int));
     }
+    vector_append(subReq->pendingAcks, &msgId);
 
     DownstreamNode* node = (DownstreamNode*)(subReq->reqNode->link->node);
     if(!node->pendingAcks) {
@@ -342,14 +340,13 @@ static int removeFromMessageQueue(SubRequester *subReq, uint32_t msgId) {
         while(rb_count(subReq->messageQueue)) {
             QueuedMessage* m = rb_front(subReq->messageQueue);
 
-	    log_info("Removing message with msgId %d from MessageQueue\n", m->msg_id);
-
             if(m->msg_id == 0 || m->msg_id > msgId) {
                 break;
             }
 	    ++result;
             rb_pop(subReq->messageQueue);
-            log_info("Removing from queue: %d\n", msgId);
+	    log_info("Removing message with msgId %d from MessageQueue\n", m->msg_id);
+
             --subReq->messageOutputQueueCount;
         }
     }

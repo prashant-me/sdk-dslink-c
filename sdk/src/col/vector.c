@@ -106,8 +106,10 @@ int vector_remove_range(Vector* vec, uint32_t lower, uint32_t upper)
         return -1;
     }
 
-    if(upper > vec->size-1) {
+    if(upper >= vec->size) {
         upper = vec->size-1;
+    } else {
+        --upper;
     }
 
     if(lower == 0 && upper == vec->size) {
@@ -149,16 +151,26 @@ long vector_binary_search(const Vector* vec, void* data, vector_comparison_fn_ty
 
 long vector_binary_search_range(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn, uint32_t lower, uint32_t r)
 {
-    if ( !vec || vec->size == 0 || !r) {
+    if ( !vec || vec->size == 0 || !r || lower >= r) {
         return -1;
     }
 
+    int res = cmp_fn(data, (char*)vec->data + (lower*vec->element_size));
+    if ( res <= 0 ) {
+      return res == 0 ? (long)lower : -1;
+    }
+    
     if ( r >= vec->size ) {
       r = vec->size-1;
     } else {
       --r;
     }
-
+    
+    res = cmp_fn(data, (char*)vec->data + (r*vec->element_size));
+    if ( res >= 0 ) {
+      return res == 0 ? (long)r : -1;
+    }
+    
     uint32_t l = lower;
     uint32_t m = 0;
     while(l <= r) {
@@ -167,35 +179,35 @@ long vector_binary_search_range(const Vector* vec, void* data, vector_comparison
         if(res == 0) {
             return m;
         } else if(res > 0) {
-            l = m + 1;
+            l = m+1;
         } else {
-            r = m - 1;
+            r = m-1;
         }
     }
 
     return -1;
 }
 
-long vector_upper_bound(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
+uint32_t vector_upper_bound(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
 {
     if(!vec || vec->size == 0) {
-        return -1;
+        return 0;
     }
 
     return vector_upper_bound_range( vec, data, cmp_fn, 0, vec->size );
 }
 
-long vector_upper_bound_range(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn, uint32_t first, uint32_t last)
+uint32_t vector_upper_bound_range(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn, uint32_t first, uint32_t last)
 {
     if ( !vec || vec->size == 0 || !last) {
-        return -1;
+        return 0;
     }
 
     if ( last > vec->size ) {
       last = vec->size;
     } 
     if (last <= first) {
-      return -1;
+      return 0;
     }
 
     uint32_t count = last- first;
