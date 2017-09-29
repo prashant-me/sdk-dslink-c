@@ -191,7 +191,7 @@ void broker_msg_handle(RemoteDSLink *link,
         json_t *req;
         size_t index = 0;
         json_array_foreach(reqs, index, req) {
-            sendAckOk &= broker_handle_req(link, req);
+            broker_handle_req(link, req);
         }
     }
 
@@ -199,7 +199,7 @@ void broker_msg_handle(RemoteDSLink *link,
         json_t *resp;
         size_t index = 0;
         json_array_foreach(resps, index, resp) {
-	  sendAckOk &= broker_handle_resp(link, resp, msg);
+            broker_handle_resp(link, resp, msg);
         }
     }
 

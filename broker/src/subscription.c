@@ -4,12 +4,16 @@
 #include <broker/config.h>
 #include <broker/broker.h>
 
+#define LOG_TAG "subscription"
+
+#include <dslink/log.h>
 
 static void removeFromMessageQueue(SubRequester *subReq, uint32_t msgId);
 static int sendMessage(SubRequester *subReq, json_t *varray, uint32_t* msgId);
 static int sendQueuedMessages(SubRequester *subReq);
 
 static const int PENDING_ACK_MAX = 8;
+static const int SEND_MAX_QUEUE = 8;
 
 
 int cmp_pack(const void* lhs, const void* rhs)
@@ -43,10 +47,9 @@ int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
         PendingAck pack = *(PendingAck*)vector_get(link->node->pendingAcks, idx);
         SubRequester *subReq = pack.subscription;
         removeFromMessageQueue(subReq, ack);
-        sendQueuedMessages(subReq);
         int sub_idx = vector_binary_search(subReq->pendingAcks, &ack, cmp_int);
         if(sub_idx >= 0) {
-            BrokerSubStream *stream = subReq->stream;
+            //BrokerSubStream *stream = subReq->stream;
 
             // We have to remove the received pending ack first, because we only know its position
             vector_remove(link->node->pendingAcks, idx);
@@ -60,8 +63,9 @@ int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
             }
             vector_remove_range(subReq->pendingAcks, 0, sub_idx);
 
+/*  We dont want to keep outstanding ACKs to the responder
             // TODO: Use configurable ack queue
-            if( vector_count(subReq->pendingAcks) == PENDING_ACK_MAX && stream->last_pending_responder_msg_id ) {
+            if( vector_count(subReq->pendingAcks) <= PENDING_ACK_MAX && stream->last_pending_responder_msg_id ) {
                 int send_pending_responder_ack = 1;
                 dslink_map_foreach(&stream->reqSubs) {
                     SubRequester *req = entry->value->data;
@@ -83,9 +87,11 @@ int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
                     }
                 }
             }
+*/
         } else {
             vector_remove(link->node->pendingAcks, idx);
         }
+        sendQueuedMessages(subReq);
         goto ready;
     }
     
@@ -273,10 +279,13 @@ static int sendQueuedMessages(SubRequester *subReq) {
 
     if(rb_count(subReq->messageQueue)) {
         uint32_t count = 0;
-        while(count < (PENDING_ACK_MAX - subReq->messageOutputQueueCount)) {
+        while(count < (SEND_MAX_QUEUE - subReq->messageOutputQueueCount)) {
             QueuedMessage* m = rb_at(subReq->messageQueue, count+subReq->messageOutputQueueCount);
             if(!m) {
                 break;
+            }
+            if(m->msg_id > 0) {
+                log_err("Has been send already: %d\n", m->msg_id);
             }
             result &= sendMessage(subReq, m->message, &m->msg_id);
             ++count;
@@ -306,11 +315,13 @@ static int sendMessage(SubRequester *subReq, json_t *varray, uint32_t* msgId) {
 static void addToMessageQueue(SubRequester *subReq, json_t *varray, uint32_t msgId) {
     if(!subReq->messageQueue) {
         subReq->messageQueue = (Ringbuffer*)dslink_malloc(sizeof(Ringbuffer));
-        // TODO: Make this value configurable
-        rb_init(subReq->messageQueue, 1024, sizeof(QueuedMessage), cleanup_queued_message);
+        // TODO lfuerste: maybe use a lesser value for QOS == 0?
+        rb_init(subReq->messageQueue, broker_max_qos_queue_size, sizeof(QueuedMessage), cleanup_queued_message);
     }
     QueuedMessage m = { json_incref(varray),  msgId};
-    rb_push(subReq->messageQueue, &m);
+    if(rb_push(subReq->messageQueue, &m) > 0) {
+        log_debug("Skipping a value because the queue is full: sid %d\n", subReq->reqSid);
+    }
     if(msgId) {
         ++subReq->messageOutputQueueCount;
     }
@@ -334,7 +345,7 @@ int broker_update_sub_req(SubRequester *subReq, json_t *varray) {
 
     uint32_t msgId = 0;
 
-    if (subReq->reqNode->link && subReq->messageOutputQueueCount < PENDING_ACK_MAX) {
+    if (subReq->reqNode->link && subReq->messageOutputQueueCount < SEND_MAX_QUEUE) {
         result = sendMessage(subReq, varray, &msgId);
     } else if (subReq->qos > 1){
         // add to qos queue
