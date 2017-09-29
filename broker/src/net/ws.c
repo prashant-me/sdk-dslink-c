@@ -69,9 +69,12 @@ int broker_ws_send_obj_link_id(struct Broker* broker, const char *link_name, int
     return -1;
 }
 
-int broker_ws_send_obj(RemoteDSLink *link, json_t *obj) {
-    ++link->msgId;
-    json_object_set_new_nocheck(obj, "msg", json_integer(link->msgId));
+uint32_t broker_ws_send_obj(RemoteDSLink *link, json_t *obj) {
+    uint32_t id = ++link->msgId;
+    if(link->msgId == 2147483647) {
+        link->msgId = 0;
+    }
+    json_object_set_new_nocheck(obj, "msg", json_integer(id));
     char *data = json_dumps(obj, JSON_PRESERVE_ORDER | JSON_COMPACT);
     json_object_del(obj, "msg");
 
@@ -84,7 +87,7 @@ int broker_ws_send_obj(RemoteDSLink *link, json_t *obj) {
         throughput_add_output(sentBytes, sentMessages);
     }
     dslink_free(data);
-    return link->msgId;
+    return id;
 }
 
 int broker_ws_send(RemoteDSLink *link, const char *data) {
