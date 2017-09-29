@@ -9,6 +9,8 @@ extern "C" {
 #include <broker/node.h>
 
 #include <dslink/col/vector.h>
+#include <dslink/col/ringbuffer.h>
+
 
 typedef struct SubRequester {
     char *path;
@@ -22,6 +24,8 @@ typedef struct SubRequester {
     // pending list node
     ListNode *pendingNode;
     Vector* pendingAcks;
+    Ringbuffer* messageQueue;
+    uint32_t messageOutputQueueCount;
 } SubRequester;
 
 
@@ -29,6 +33,12 @@ typedef struct PendingAck {
     SubRequester* subscription;
     uint32_t msg_id;
 } PendingAck;
+
+typedef struct QueuedMessage {
+    json_t* message;
+    uint32_t msg_id;
+} QueuedMessage;
+
 
 void send_subscribe_request(DownstreamNode *node,
                             const char *path,
