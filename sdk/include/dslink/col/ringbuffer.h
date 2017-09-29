@@ -10,7 +10,7 @@ extern "C" {
 
 #include "dslink/mem/mem.h"
 
-    typedef int comparison_fn_type(const void *, const void *);
+    typedef void (*rb_cleanup_fn_type)(void *);
 
     /// Defines the structure of a ringbuffer.
     typedef struct {
@@ -19,6 +19,7 @@ extern "C" {
         uint32_t count;
         void* data;
         size_t element_size;
+        rb_cleanup_fn_type cleanup_fn;
     } Ringbuffer;
 
 
@@ -26,8 +27,9 @@ extern "C" {
     /// @param rb The ringbuffer to initialize
     /// @param size The initial element capacity of the ringbuffer
     /// @param element_size Size of a single element.
+    /// @param cleanup_fn
     /// @return 0 if the ringbuffer could be initialized successfully, otherwise -1
-    int rb_init(Ringbuffer* rb, uint32_t size, size_t element_size);
+    int rb_init(Ringbuffer* rb, uint32_t size, size_t element_size, rb_cleanup_fn_type cleanup_fn);
 
     /// Returns the number of elements in the ringbuffer.
     /// @param rb The ringbuffer to initialize
@@ -45,6 +47,12 @@ extern "C" {
     /// @param rb The ringbuffer
     /// @return A pointer to the value or NULL if the ringbuffer has no values
     void* rb_front(const Ringbuffer* rb);
+
+    /// Gets the value at the index of the ringbuffer.
+    /// @param rb The ringbuffer
+    /// @param index The index to get the value for
+    /// @return A pointer to the value or NULL if the index is out of range
+    void* rb_at(const Ringbuffer* rb, uint32_t index);
 
     /// Removes the first value of the ringbuffer.
     /// @param rb The ringbuffer
