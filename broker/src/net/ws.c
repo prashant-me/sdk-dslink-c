@@ -49,7 +49,7 @@ int broker_count_json_msg(json_t *json) {
     return messages;
 }
 
-int broker_ws_send_obj_link_id(struct Broker* broker, const char *link_name, int upstream, json_t *obj)
+uint32_t broker_ws_send_obj_link_id(struct Broker* broker, const char *link_name, int upstream, json_t *obj)
 {
     ref_t *ref;
     if(upstream) {

@@ -53,9 +53,11 @@ void broker_remote_dslink_free(RemoteDSLink *link) {
         dslink_map_foreach(&link->node->req_sub_paths) {
             // find all subscription that doesn't use qos
             SubRequester *subreq = entry->value->data;
-            if (subreq->qos == 0) {
+            if (subreq->qos <= 1) {
                 dslink_list_insert(&req_sub_to_remove, subreq);
-            }
+            } else if (subreq->qos == 2) {
+	        broker_clear_messsage_ids(subreq);
+	    }
         }
         dslink_list_foreach(&req_sub_to_remove) {
             // clear non-qos subscription

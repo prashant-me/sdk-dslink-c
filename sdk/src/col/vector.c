@@ -23,7 +23,7 @@ int vector_init(Vector* vec, uint32_t initial_size, size_t element_size)
     return 0;
 }
 
-int vector_count(const Vector* vec)
+uint32_t vector_count(const Vector* vec)
 {
     if(!vec) {
         return 0;
@@ -123,7 +123,7 @@ int vector_remove_range(Vector* vec, uint32_t lower, uint32_t upper)
     return 0;
 }
 
-int vector_find(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
+long vector_find(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
 {
     if(!vec || vec->size == 0) {
         return -1;
@@ -138,7 +138,7 @@ int vector_find(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
     return -1;
 }
 
-int vector_binary_search(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
+long vector_binary_search(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
 {
     if(!vec || vec->size == 0) {
         return -1;
@@ -147,7 +147,7 @@ int vector_binary_search(const Vector* vec, void* data, vector_comparison_fn_typ
     return vector_binary_search_range( vec, data, cmp_fn, 0, vec->size );
 }
 
-int vector_binary_search_range(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn, uint32_t lower, uint32_t r)
+long vector_binary_search_range(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn, uint32_t lower, uint32_t r)
 {
     if ( !vec || vec->size == 0 || !r) {
         return -1;

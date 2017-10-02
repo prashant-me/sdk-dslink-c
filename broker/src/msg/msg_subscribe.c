@@ -203,7 +203,9 @@ void handle_subscribe(RemoteDSLink *link, json_t *sub) {
         if (json_array_size(reqsub->qosQueue) > 0) {
             // send qos data
             broker_update_sub_req_qos(reqsub);
-        } else if (reqsub->stream && reqsub->stream->last_value) {
+        } else if (reqsub->qos == 2) {
+  	    sendQueuedMessages( reqsub);
+	} else if (reqsub->stream && reqsub->stream->last_value) {
             broker_update_sub_req(reqsub, reqsub->stream->last_value);
         }
         return;

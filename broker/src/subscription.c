@@ -8,12 +8,13 @@
 
 #include <dslink/log.h>
 
+#include <string.h>
+
 static void removeFromMessageQueue(SubRequester *subReq, uint32_t msgId);
 static int sendMessage(SubRequester *subReq, json_t *varray, uint32_t* msgId);
-static int sendQueuedMessages(SubRequester *subReq);
 
-static const int PENDING_ACK_MAX = 8;
-static const int SEND_MAX_QUEUE = 8;
+static const uint32_t PENDING_ACK_MAX = 8;
+static const uint32_t SEND_MAX_QUEUE = 8;
 
 
 int cmp_pack(const void* lhs, const void* rhs)
@@ -136,7 +137,7 @@ SubRequester *broker_create_sub_requester(DownstreamNode * node, const char *pat
     if (qosQueue) {
         req->qosQueue = qosQueue;
         json_incref(qosQueue);
-    } else if (qos > 0) {
+    } else if (qos > 2) {
         req->qosQueue = json_array();
     }
     req->path = dslink_strdup(path);
@@ -210,6 +211,19 @@ void broker_free_sub_requester(SubRequester *req) {
     dslink_free(req);
 }
 
+void broker_clear_messsage_ids(SubRequester *subReq)
+{
+  while (subReq->messageOutputQueueCount) {
+    --subReq->messageOutputQueueCount;
+    QueuedMessage* m = rb_at(subReq->messageQueue, subReq->messageOutputQueueCount);
+    if(!m) {
+      break;
+    }
+    m->msg_id = 0;
+  }
+}
+
+
 void clear_qos_queue(SubRequester *subReq, uint8_t serialize) {
     json_array_clear(subReq->qosQueue);
     if (serialize && subReq->qos > 2) {
@@ -274,27 +288,27 @@ void cleanup_queued_message(void* message) {
     }
 }
 
-static int sendQueuedMessages(SubRequester *subReq) {
+int sendQueuedMessages(SubRequester *subReq) {
     int result = 1;
 
     if(rb_count(subReq->messageQueue)) {
-        uint32_t count = 0;
-        while(count < (SEND_MAX_QUEUE - subReq->messageOutputQueueCount)) {
-            QueuedMessage* m = rb_at(subReq->messageQueue, count+subReq->messageOutputQueueCount);
+	while (subReq->messageOutputQueueCount < SEND_MAX_QUEUE) {
+            QueuedMessage* m = rb_at(subReq->messageQueue, subReq->messageOutputQueueCount);
             if(!m) {
                 break;
             }
             if(m->msg_id > 0) {
                 log_err("Has been send already: %d\n", m->msg_id);
+		break;
             }
             result &= sendMessage(subReq, m->message, &m->msg_id);
-            ++count;
         }
     }
     return result;
 }
 
-static int sendMessage(SubRequester *subReq, json_t *varray, uint32_t* msgId) {
+static int sendMessage(SubRequester *subReq, json_t *varray, uint32_t* msgId) 
+{
     json_t *top = json_object();
     json_t *resps = json_array();
     json_object_set_new_nocheck(top, "responses", resps);
@@ -309,6 +323,9 @@ static int sendMessage(SubRequester *subReq, json_t *varray, uint32_t* msgId) {
 
     *msgId = broker_ws_send_obj(subReq->reqNode->link, top);
     json_decref(top);
+
+    ++subReq->messageOutputQueueCount;
+
     return addPendingAck(subReq, *msgId);
 }
 
@@ -321,9 +338,6 @@ static void addToMessageQueue(SubRequester *subReq, json_t *varray, uint32_t msg
     QueuedMessage m = { json_incref(varray),  msgId};
     if(rb_push(subReq->messageQueue, &m) > 0) {
         log_debug("Skipping a value because the queue is full: sid %d\n", subReq->reqSid);
-    }
-    if(msgId) {
-        ++subReq->messageOutputQueueCount;
     }
 }
 
@@ -345,9 +359,18 @@ int broker_update_sub_req(SubRequester *subReq, json_t *varray) {
 
     uint32_t msgId = 0;
 
-    if (subReq->reqNode->link && subReq->messageOutputQueueCount < SEND_MAX_QUEUE) {
-        result = sendMessage(subReq, varray, &msgId);
-    } else if (subReq->qos > 1){
+    if ( subReq->qos <= 2 ) {
+      // We need to send the message first to get a message id
+      if (subReq->reqNode->link && subReq->messageOutputQueueCount < SEND_MAX_QUEUE) {
+ 	result = sendMessage(subReq, varray, &msgId);
+      }
+      // Now add the message with or without its message id to the queue
+      addToMessageQueue(subReq, varray, msgId);
+    } else {
+      if (subReq->reqNode->link ) {
+ 	result = sendMessage(subReq, varray, &msgId);
+	--subReq->messageOutputQueueCount;
+      } else {
         // add to qos queue
         if (!subReq->qosQueue) {
             subReq->qosQueue = json_array();
@@ -355,16 +378,13 @@ int broker_update_sub_req(SubRequester *subReq, json_t *varray) {
         if (json_array_size(subReq->qosQueue) >= broker_max_qos_queue_size) {
             // destroy qos queue when exceed max queue size
             clear_qos_queue(subReq, 1);
-            subReq->qos = 0;
             return result;
         }
         json_array_append(subReq->qosQueue, varray);
-        if (subReq->qos > 2) {
-            serialize_qos_queue(subReq, 0);
-        }
+	serialize_qos_queue(subReq, 0);
+      }
     }
 
-    addToMessageQueue(subReq, varray, msgId);
 
     return result;
 }
