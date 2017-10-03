@@ -10,7 +10,7 @@
 
 #include <string.h>
 
-static void removeFromMessageQueue(SubRequester *subReq, uint32_t msgId);
+static int removeFromMessageQueue(SubRequester *subReq, uint32_t msgId);
 static int sendMessage(SubRequester *subReq, json_t *varray, uint32_t* msgId);
 
 static const uint32_t PENDING_ACK_MAX = 8;
@@ -43,27 +43,22 @@ int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
 {
     PendingAck search_pack = { NULL, ack };
     log_info("Receiving ack from %s: %d\n", link->name, ack);
-    int idx = vector_binary_search(link->node->pendingAcks, &search_pack, cmp_pack);
+    int last = vector_upper_bound(link->node->pendingAcks, &search_pack, cmp_pack);
 
-    if(idx >= 0) {
-        PendingAck pack = *(PendingAck*)vector_get(link->node->pendingAcks, idx);
-        SubRequester *subReq = pack.subscription;
-        removeFromMessageQueue(subReq, ack);
-        int sub_idx = vector_binary_search(subReq->pendingAcks, &ack, cmp_int);
-        if(sub_idx >= 0) {
-            //BrokerSubStream *stream = subReq->stream;
+    for (int idx = last-1; idx >= 0; --idx) { 
+      PendingAck pack = *(PendingAck*)vector_get(link->node->pendingAcks, idx);
+      SubRequester *subReq = pack.subscription;
 
-            // We have to remove the received pending ack first, because we only know its position
-            vector_remove(link->node->pendingAcks, idx);
-            // Now we may remove all skipped pending acks
-            for ( int skipped_sub_idx = 0; skipped_sub_idx < sub_idx; ++skipped_sub_idx ) {
-                PendingAck skipped_pack = { NULL, *(int*)vector_get(subReq->pendingAcks, skipped_sub_idx) };
-                int skipped_idx = vector_binary_search_range( link->node->pendingAcks, &skipped_pack, cmp_pack, 0, idx );
-                if ( skipped_idx >= 0 ) {
-                    vector_remove(link->node->pendingAcks, skipped_idx);
-                }
-            }
-            vector_remove_range(subReq->pendingAcks, 0, sub_idx);
+      int sub_idx = vector_binary_search(subReq->pendingAcks, &pack.msg_id, cmp_int);
+      if(sub_idx >= 0) {
+	vector_remove_range(subReq->pendingAcks, 0, sub_idx+1);
+      }
+
+      if ( removeFromMessageQueue(subReq, pack.msg_id) ) { 
+	sendQueuedMessages(subReq);
+      }      
+    }
+    vector_remove_range(link->node->pendingAcks, 0, last);
 
 /*  We dont want to keep outstanding ACKs to the responder
             // TODO: Use configurable ack queue
@@ -90,18 +85,8 @@ int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
                 }
             }
 */
-        } else {
-            vector_remove(link->node->pendingAcks, idx);
-        }
-        sendQueuedMessages(subReq);
-        goto ready;
-    }
     
     return 0;
-    
-ready:
-
-    return 1;
 }
 
 
@@ -327,10 +312,16 @@ static int sendMessage(SubRequester *subReq, json_t *varray, uint32_t* msgId)
 
     ++subReq->messageOutputQueueCount;
 
+     log_info("Send message with msgId %d\n", *msgId);
+
     return addPendingAck(subReq, *msgId);
 }
 
 static void addToMessageQueue(SubRequester *subReq, json_t *varray, uint32_t msgId) {
+
+     log_info("Add message with msgId %d to MessageQueue\n", msgId);
+
+
     if(!subReq->messageQueue) {
         subReq->messageQueue = (Ringbuffer*)dslink_malloc(sizeof(Ringbuffer));
         // TODO lfuerste: maybe use a lesser value for QOS == 0?
@@ -342,18 +333,27 @@ static void addToMessageQueue(SubRequester *subReq, json_t *varray, uint32_t msg
     }
 }
 
-static void removeFromMessageQueue(SubRequester *subReq, uint32_t msgId) {
+static int removeFromMessageQueue(SubRequester *subReq, uint32_t msgId) {
+   int result = 0;
+
+    log_info("Remove message with msgId %d from MessageQueue\n", msgId);
+
     if(subReq->messageQueue) {
         while(rb_count(subReq->messageQueue)) {
             QueuedMessage* m = rb_front(subReq->messageQueue);
+
+	    log_info("Removing message with msgId %d from MessageQueue\n", m->msg_id);
+
             if(m->msg_id == 0 || m->msg_id > msgId) {
                 break;
             }
+	    ++result;
             rb_pop(subReq->messageQueue);
             log_info("Removing from queue: %d\n", msgId);
             --subReq->messageOutputQueueCount;
         }
     }
+    return result;
 }
 
 int broker_update_sub_req(SubRequester *subReq, json_t *varray) {

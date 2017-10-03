@@ -2,7 +2,6 @@ include(cmocka.cmake)
 
 enable_testing()
 
-include_directories(include)
 include_directories(${CMOCKA_INCLUDE_DIR} include)
 
 find_program(MEMORYCHECK_COMMAND valgrind)

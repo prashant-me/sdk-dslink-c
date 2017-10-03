@@ -298,6 +298,7 @@ void col_vec_binary_search_range_test(void **state) {
 
     assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, 0, idx+1), idx );
     assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, idx, 512), idx );
+    assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, idx/2, 512), idx );
     assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, idx, idx+1), idx );
     assert_int_equal( vector_binary_search_range(&vec, &n, cmp_int, 0, 2*512), idx );
 
@@ -314,7 +315,7 @@ void col_vec_binary_search_range_test(void **state) {
     assert_int_equal(idx, -1);
 
     n = 1024;
-    idx = vector_binary_search( &vec, &n, cmp_int, 0, 512 );
+    idx = vector_binary_search_range( &vec, &n, cmp_int, 0, 512 );
     assert_int_equal(idx, -1);
 
     vector_free(&vec);

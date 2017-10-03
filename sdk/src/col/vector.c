@@ -165,7 +165,7 @@ long vector_binary_search_range(const Vector* vec, void* data, vector_comparison
         m = (l + r) / 2;
         int res = cmp_fn(data, (char*)vec->data + (m*vec->element_size));
         if(res == 0) {
-            return lower+m;
+            return m;
         } else if(res > 0) {
             l = m + 1;
         } else {
@@ -175,6 +175,48 @@ long vector_binary_search_range(const Vector* vec, void* data, vector_comparison
 
     return -1;
 }
+
+long vector_upper_bound(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn)
+{
+    if(!vec || vec->size == 0) {
+        return -1;
+    }
+
+    return vector_upper_bound_range( vec, data, cmp_fn, 0, vec->size );
+}
+
+long vector_upper_bound_range(const Vector* vec, void* data, vector_comparison_fn_type cmp_fn, uint32_t first, uint32_t last)
+{
+    if ( !vec || vec->size == 0 || !last) {
+        return -1;
+    }
+
+    if ( last > vec->size ) {
+      last = vec->size;
+    } 
+    if (last <= first) {
+      return -1;
+    }
+
+    uint32_t count = last- first;
+
+    while (count > 0) {
+      uint32_t it = first;
+      uint32_t step = count / 2;
+      it += step;
+      
+      int res = cmp_fn(data, (char*)vec->data + (it*vec->element_size));
+      if(res >= 0) {
+	first = ++it;
+	count -= step + 1;
+      } else {
+	count = step;
+      }
+    }
+
+    return first;
+}
+
 
 int vector_free(Vector* vec)
 {

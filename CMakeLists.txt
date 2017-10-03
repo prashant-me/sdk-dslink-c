@@ -194,12 +194,6 @@ set(BROKER_SRC
     "${BROKER_SRC_DIR}/msg/msg_remove.c"
     "${BROKER_SRC_DIR}/sys/throughput.c"
 )
-###### Configure Tests #####
-
-if (DSLINK_TEST)
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
-    enable_testing()
-endif()
 
 ###### Configure Libraries #####
 
@@ -255,11 +249,19 @@ if (DSLINK_BUILD_BROKER)
     target_link_libraries(broker sdk_broker_c)
 endif()
 
+###### Configure Tests #####
+
+if (DSLINK_TEST)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
+    enable_testing()
+endif()
+
+
 ###### Configure Examples ######
 
 if (DSLINK_BUILD_EXAMPLES)
     foreach(example "responder" "requester" "storage")
-        include("${CMAKE_CURRENT_SOURCE_DIR}/examples/${example}/CMakeLists.txt")
+        include("${CMAKE_CURRENT_LIST_DIR}/examples/${example}/CMakeLists.txt")
         add_executable(${example} ${EXAMPLE_SRC})
         target_link_libraries(${example} sdk_dslink_c-static)
     endforeach()
