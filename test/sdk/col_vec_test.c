@@ -16,6 +16,27 @@ void col_vec_init_test(void **state) {
     vector_free(&vec);
 }
 
+
+static
+void col_vec_free_test(void **state) {
+    (void) state;
+
+    Vector vec;
+    vector_init(&vec, 10, sizeof(int));
+
+    vector_free(&vec);
+    assert_null(vec.data);
+    assert_int_equal(vec.capacity, 0);
+    assert_int_equal(vec.size, 0);
+    assert_int_equal(vec.element_size, sizeof(int));
+
+    int n = 4711;
+    long index = vector_append(&vec, &n);
+    assert_int_equal(vec.size, 1);
+    assert_int_equal(index, 0);
+    assert_int_equal(*(int*)vector_get(&vec, index), 4711);
+}
+
 static
 void col_vec_append_test(void **state) {
     (void) state;
@@ -435,6 +456,7 @@ void col_vec_range_remove_test(void **state) {
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(col_vec_init_test),
+        cmocka_unit_test(col_vec_free_test),
         cmocka_unit_test(col_vec_append_test),
         cmocka_unit_test(col_vec_resize_test),
         cmocka_unit_test(col_vec_set_get_test),

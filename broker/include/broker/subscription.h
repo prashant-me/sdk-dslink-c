@@ -23,7 +23,6 @@ typedef struct SubRequester {
     char *qosKey2;
     // pending list node
     ListNode *pendingNode;
-    Vector* pendingAcks;
     Ringbuffer* messageQueue;
     uint32_t messageOutputQueueCount;
 } SubRequester;

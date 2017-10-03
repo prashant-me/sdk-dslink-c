@@ -50,43 +50,12 @@ int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
       PendingAck pack = *(PendingAck*)vector_get(link->node->pendingAcks, idx);
       SubRequester *subReq = pack.subscription;
       
-      int sub_idx = vector_binary_search(subReq->pendingAcks, &pack.msg_id, cmp_int);
-      if(sub_idx >= 0) {
-	vector_remove_range(subReq->pendingAcks, 0, sub_idx+1);
-      }
-      
       if ( removeFromMessageQueue(subReq, pack.msg_id) ) { 
 	sendQueuedMessages(subReq);
       }      
     }
     vector_remove_range(link->node->pendingAcks, 0, last);
     return 0;
-/*  We dont want to keep outstanding ACKs to the responder
-            // TODO: Use configurable ack queue
-            if( vector_count(subReq->pendingAcks) <= PENDING_ACK_MAX && stream->last_pending_responder_msg_id ) {
-                int send_pending_responder_ack = 1;
-                dslink_map_foreach(&stream->reqSubs) {
-                    SubRequester *req = entry->value->data;
-                    send_pending_responder_ack &= vector_count(req->pendingAcks) > PENDING_ACK_MAX  ? 0 : 1;
-                }
-
-                if ( send_pending_responder_ack ) {
-                    DownstreamNode* downstream_node = (DownstreamNode*)stream->respNode;
-                    if ( downstream_node->link ) {
-                        json_t *obj = json_object();
-                        if (obj) {
-                            json_object_set_nocheck(obj, "ack", stream->last_pending_responder_msg_id);
-                            broker_ws_send_obj(downstream_node->link, obj);
-                            json_decref(obj);
-                            
-                            json_decref(stream->last_pending_responder_msg_id);
-                            stream->last_pending_responder_msg_id = NULL;
-                        }
-                    }
-                }
-            }
-*/
-    
 }
 
 
@@ -180,11 +149,6 @@ void broker_free_sub_requester(SubRequester *req) {
         clear_qos_queue(req, 1);
         json_decref(req->qosQueue);
     }
-    if(req->pendingAcks) {
-        vector_free(req->pendingAcks);
-        dslink_free(req->pendingAcks);
-      req->pendingAcks = NULL;
-    }
     if(req->messageQueue) {
         rb_free(req->messageQueue);
         dslink_free(req->messageQueue);
@@ -243,12 +207,6 @@ void broker_update_sub_req_qos(SubRequester *subReq) {
 
 static int addPendingAck(SubRequester *subReq, uint32_t msgId)
 {
-    if(!subReq->pendingAcks) {
-        subReq->pendingAcks = (Vector*)dslink_malloc(sizeof(Vector));
-	vector_init(subReq->pendingAcks, 64, sizeof(int));
-    }
-    vector_append(subReq->pendingAcks, &msgId);
-
     DownstreamNode* node = (DownstreamNode*)(subReq->reqNode->link->node);
     if(!node->pendingAcks) {
         node->pendingAcks = (Vector*)dslink_malloc(sizeof(Vector));
@@ -257,12 +215,7 @@ static int addPendingAck(SubRequester *subReq, uint32_t msgId)
     PendingAck pack = { subReq, msgId };
     vector_append(node->pendingAcks, &pack);
 
-    // TODO: Make this value configurable
-    if(vector_count(subReq->pendingAcks) > PENDING_ACK_MAX) {
-        return 0;
-    }
-
-    return 1;
+    return 0;
 }
 
 void cleanup_queued_message(void* message) {

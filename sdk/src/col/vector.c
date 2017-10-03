@@ -238,5 +238,9 @@ int vector_free(Vector* vec)
 
     dslink_free(vec->data);
 
+    vec->data = NULL;
+    vec->size = 0;
+    vec->capacity = 0;
+
     return 0;
 }
