@@ -182,7 +182,7 @@ void broker_msg_handle(RemoteDSLink *link,
 
     int sendAckOk = 0;
     json_t *msg = json_object_get(data, "msg");
-    if (json_is_integer(msg)) {
+    if (json_is_integer(msg) && (reqs || resps)) {
         sendAckOk = 1;
     }
 
