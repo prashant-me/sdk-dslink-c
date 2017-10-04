@@ -42,6 +42,7 @@ int cmp_int(const void* lhs, const void* rhs)
 int check_subscription_ack(RemoteDSLink *link, uint32_t ack)
 {
     PendingAck search_pack = { NULL, ack };
+    log_info("Receiving ack from %s: %d\n", link->name, ack);
     int idx = vector_binary_search(link->node->pendingAcks, &search_pack, cmp_pack);
 
     if(idx >= 0) {
@@ -292,14 +293,14 @@ int sendQueuedMessages(SubRequester *subReq) {
     int result = 1;
 
     if(rb_count(subReq->messageQueue)) {
-	while (subReq->messageOutputQueueCount < SEND_MAX_QUEUE) {
+        while (subReq->messageOutputQueueCount < SEND_MAX_QUEUE) {
             QueuedMessage* m = rb_at(subReq->messageQueue, subReq->messageOutputQueueCount);
             if(!m) {
                 break;
             }
             if(m->msg_id > 0) {
                 log_err("Has been send already: %d\n", m->msg_id);
-		break;
+                break;
             }
             result &= sendMessage(subReq, m->message, &m->msg_id);
         }
@@ -349,6 +350,7 @@ static void removeFromMessageQueue(SubRequester *subReq, uint32_t msgId) {
                 break;
             }
             rb_pop(subReq->messageQueue);
+            log_info("Removing from queue: %d\n", msgId);
             --subReq->messageOutputQueueCount;
         }
     }
@@ -360,32 +362,35 @@ int broker_update_sub_req(SubRequester *subReq, json_t *varray) {
     uint32_t msgId = 0;
 
     if ( subReq->qos <= 2 ) {
-      // We need to send the message first to get a message id
-      if (subReq->reqNode->link && subReq->messageOutputQueueCount < SEND_MAX_QUEUE) {
- 	result = sendMessage(subReq, varray, &msgId);
-      }
-      // Now add the message with or without its message id to the queue
-      addToMessageQueue(subReq, varray, msgId);
+        // We need to send the message first to get a message id
+        if (subReq->reqNode->link && subReq->messageOutputQueueCount < SEND_MAX_QUEUE) {
+            result = sendMessage(subReq, varray, &msgId);
+            log_info("Sending with msgid: %d\n", msgId);
+        } else {
+            log_info("Send queue full: %d\n", subReq->reqSid);
+        }
+        // Now add the message with or without its message id to the queue
+        addToMessageQueue(subReq, varray, msgId);
     } else {
-      if (subReq->reqNode->link ) {
- 	result = sendMessage(subReq, varray, &msgId);
-	--subReq->messageOutputQueueCount;
-      } else {
-        // add to qos queue
-        if (!subReq->qosQueue) {
-            subReq->qosQueue = json_array();
+        if (subReq->reqNode->link ) {
+            result = sendMessage(subReq, varray, &msgId);
+            --subReq->messageOutputQueueCount;
+        } else {
+            // add to qos queue
+            if (!subReq->qosQueue) {
+                subReq->qosQueue = json_array();
+            }
+            if (json_array_size(subReq->qosQueue) >= broker_max_qos_queue_size) {
+                // destroy qos queue when exceed max queue size
+                clear_qos_queue(subReq, 1);
+                return result;
+            }
+            json_array_append(subReq->qosQueue, varray);
+            serialize_qos_queue(subReq, 0);
         }
-        if (json_array_size(subReq->qosQueue) >= broker_max_qos_queue_size) {
-            // destroy qos queue when exceed max queue size
-            clear_qos_queue(subReq, 1);
-            return result;
-        }
-        json_array_append(subReq->qosQueue, varray);
-	serialize_qos_queue(subReq, 0);
-      }
     }
-
-
+    
+    
     return result;
 }
 
