@@ -13,7 +13,6 @@
 static int removeFromMessageQueue(SubRequester *subReq, uint32_t msgId);
 static int sendMessage(SubRequester *subReq, json_t *varray, uint32_t* msgId);
 
-static const uint32_t PENDING_ACK_MAX = 8;
 static const uint32_t SEND_MAX_QUEUE = 8;
 
 
