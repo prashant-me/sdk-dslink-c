@@ -33,6 +33,7 @@ void col_vec_free_test(void **state) {
     int n = 4711;
     long index = vector_append(&vec, &n);
     assert_int_equal(vec.size, 1);
+    assert_int_not_equal(vec.capacity, 0);
     assert_int_equal(index, 0);
     assert_int_equal(*(int*)vector_get(&vec, index), 4711);
 }

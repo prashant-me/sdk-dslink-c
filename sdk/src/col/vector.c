@@ -39,6 +39,9 @@ static int vector_resize(Vector* vec)
     }
     if(vec->size >= vec->capacity) {
         uint32_t cap = vec->capacity * 2;
+        if(!cap) {
+            cap = 64;
+        }
         void* data = dslink_realloc(vec->data, cap*vec->element_size);
         if(!data) {
             return -1;
