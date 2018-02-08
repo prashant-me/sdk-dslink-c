@@ -139,7 +139,7 @@ void broker_https_on_data_callback(Client *client, void *data) {
         wslay_event_recv(link->ws);
         if (link->pendingClose) {
             // clear the poll now, so it won't get cleared twice
-            log_debug("Pending close on link %s in broker_https_on_data_callback", link->name);
+            log_debug("Pending close on link %s in broker_https_on_data_callback\n", link->name);
             link->client->poll = NULL;
             broker_close_link(link);
         }
@@ -197,7 +197,7 @@ void broker_https_on_data_callback(Client *client, void *data) {
     }
 
     exit:
-    log_debug("Error in broker_https_on_data_callback: closing socket");
+    log_debug("Error in broker_https_on_data_callback: closing socket\n");
     dslink_socket_close_nofree(client->sock);
 }
 
@@ -209,7 +209,7 @@ void broker_on_data_callback(Client *client, void *data) {
         link->ws->read_enabled = 1;
         wslay_event_recv(link->ws);
         if (link->pendingClose) {
-            log_debug("Pending close on link %s in broker_on_data_callback", link->name);
+            log_debug("Pending close on link %s in broker_on_data_callback\n", link->name);
             // clear the poll now, so it won't get cleared twice
             link->client->poll = NULL;
             broker_close_link(link);
@@ -258,7 +258,7 @@ void broker_on_data_callback(Client *client, void *data) {
     }
 
 exit:
-    log_debug("Error in broker_on_data_callback: closing socket");
+    log_debug("Error in broker_on_data_callback: closing socket\n");
     dslink_socket_close_nofree(client->sock);
 }
 
@@ -564,14 +564,14 @@ int broker_init_extensions(Broker* broker, json_t* config) {
         json_t* extensions_https = json_object_get(config, "extension_https");
         if(extensions_https && json_boolean_value(extensions_https)) {
             if(!httpsEnabled) {
-                log_err("Cannot load extensions. At least https has to be enabled.");
+                log_err("Cannot load extensions. At least https has to be enabled.\n");
                 return -1;
             }
 
             broker->extensionConfig.brokerUrl = setHostFrom("https", httpsHost, httpsPort);
         } else {
             if(!httpEnabled) {
-                log_err("Cannot load extensions. At least http has to be enabled.");
+                log_err("Cannot load extensions. At least http has to be enabled.\n");
                 return -1;
             }
 

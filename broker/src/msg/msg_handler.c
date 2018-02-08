@@ -69,11 +69,11 @@ int broker_handle_req(RemoteDSLink *link, json_t *req) {
         }
     } else if (strcmp(method, "set") == 0) {
         if (broker_msg_handle_set(link, req) != 0) {
-            log_err("Failed to handle set request");
+            log_err("Failed to handle set request\n");
         }
     } else if (strcmp(method, "remove") == 0) {
         if (broker_msg_handle_remove(link, req) != 0) {
-            log_err("Failed to handle remove request");
+            log_err("Failed to handle remove request\n");
         }
     } else if (strcmp(method, "close") == 0) {
         if (broker_msg_handle_close(link, req) != 0) {

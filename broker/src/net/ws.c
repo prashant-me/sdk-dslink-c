@@ -83,7 +83,7 @@ uint32_t broker_ws_send_obj(RemoteDSLink *link, json_t *obj) {
     json_object_del(obj, "msg");
 
     if (!data) {
-        log_err("broker_ws_send_obj: data is null. Could not allocate memory");
+        log_err("broker_ws_send_obj: data is null. Could not allocate memory\n");
         // TODO: DSLINK_ALLOC_ERR will be interpreted as message id by the calling function
         return DSLINK_ALLOC_ERR;
     }
@@ -114,7 +114,7 @@ int broker_ws_send(RemoteDSLink *link, const char *data) {
         return (int)msg.msg_length;
     }
 
-    log_err("broker_ws_send: Error when sending message to %s", link->name)
+    log_err("broker_ws_send: Error when sending message to %s\n", link->name)
     return -1;
 }
 

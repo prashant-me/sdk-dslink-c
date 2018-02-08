@@ -201,7 +201,7 @@ json_t *broker_handshake_handle_conn(Broker *broker,
 
                     broker_downstream_nodes_changed(broker);
                 } else {
-                    log_err("No node found");
+                    log_err("No node found\n");
                     goto fail;
                 }
             } else {
@@ -268,7 +268,7 @@ void dslink_handle_ping(uv_timer_t* handle) {
         gettimeofday(&current_time, NULL);
         long time_diff = current_time.tv_sec - link->lastReceiveTime->tv_sec;
         if (time_diff >= 90) {
-            log_debug("Didn't receive ping message for 90 seconds. Disconnectiing...")
+            log_debug("Didn't receive ping message for 90 seconds. Disconnectiing...\n")
             broker_close_link(link);
         }
     }

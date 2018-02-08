@@ -110,24 +110,32 @@ void upstream_io_handler(uv_poll_t *poll, int status, int events) {
         return;
     }
     if (status < 0) {
-        log_err("Failed to handle upstream connection: %s\n", uv_strerror(status));
+        log_err("Failed to handle upstream connection %s: error %s\n", upstreamPoll->name, uv_strerror(status));
         reconnect_if_error_occured(status, upstreamPoll);
         return;
     }
 
     if (events & UV_READABLE) {
         int stat = wslay_event_recv(upstreamPoll->ws);
+        if ( stat ) {
+          log_err("Failed to handle incoming request on upstream connection %s due to error %s\n", 
+                  upstreamPoll->name, uv_strerror(stat));
+        }
         reconnect_if_error_occured(stat, upstreamPoll);
     }
 
     if (events & UV_WRITABLE) {
         if(!wslay_event_want_write(upstreamPoll->ws)) {
-            log_debug("Stopping WRITE poll on upstream node\n");
+          log_debug("Stopping WRITE poll on upstream %s\n", upstreamPoll->name);
             uv_poll_start(poll, UV_READABLE, upstream_io_handler);
         } else {
-            log_debug("Enabling READ/WRITE poll on upstream node\n");
+            log_debug("Enabling READ/WRITE poll on upstream %s\n", upstreamPoll->name);
             uv_poll_start(poll, UV_READABLE | UV_WRITABLE, upstream_io_handler);
             int stat = wslay_event_send(upstreamPoll->ws);
+            if ( stat ) {
+              log_err("Failed to send outgoing request on upstream connection %s due to error %s\n", 
+                      upstreamPoll->name, uv_strerror(stat));
+            }
             reconnect_if_error_occured(stat, upstreamPoll);
         }
     }
@@ -283,7 +291,7 @@ void connect_conn_callback(uv_poll_t *handle, int status, int events) {
                   upstreamPoll->clientDslink->config.broker_url->port);
         if ((dslink_handshake_connect_ws(upstreamPoll->clientDslink->config.broker_url, &upstreamPoll->clientDslink->key, uri,
                                          tKey, salt, upstreamPoll->dsId, NULL, &upstreamPoll->sock)) != 0) {
-            log_err("dslink_handshake_connect_ws failed. Trying to reconnect.");
+            log_err("dslink_handshake_connect_ws failed. Trying to reconnect.\n");
             upstream_reconnect(upstreamPoll);
             goto exit;
         } else {
@@ -296,7 +304,7 @@ void connect_conn_callback(uv_poll_t *handle, int status, int events) {
         upstreamPoll->status = UPSTREAM_WS;
         upstreamPoll->reconnectInterval = 0;
     } else {
-        log_err("No handshake data. Trying to reconnect.");
+        log_err("No handshake data. Trying to reconnect.\n");
         upstreamPoll->status = UPSTREAM_NONE;
         upstream_reconnect(upstreamPoll);
     }
