@@ -40,6 +40,7 @@ void json_merge_test(void **state) {
 
     json_t* top = merge_queue_messages(&send_queue);
     assert_int_equal(0, vector_count(&send_queue));
+    vector_free(&send_queue);
 
     json_t* reqs = json_object_get(top, "requests");
     assert_non_null(reqs);
