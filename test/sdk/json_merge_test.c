@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <jansson.h>
-#include "dslink/col/vector.h"
+#include "dslink/message_utils.h"
 
 #include "cmocka_init.h"
 
@@ -39,45 +38,23 @@ void json_merge_test(void **state) {
         vector_append(&send_queue, &resp);
     }
 
-    json_t* top = json_object();
-    json_t* reqs = NULL;
-    json_t *resps = NULL;
+    json_t* top = merge_queue_messages(&send_queue);
+    assert_int_equal(0, vector_count(&send_queue));
 
-    dslink_vector_foreach(&send_queue) {
-        json_t* obj = (json_t*)(*(void**)data);
+    json_t* reqs = json_object_get(top, "requests");
+    assert_non_null(reqs);
+    assert_int_equal(4u, json_array_size(reqs));
 
-        json_t* req = json_object_get(obj, "requests");
-        if(!reqs) {
-            reqs = req;
-            json_object_set(top, "requests", json_incref(reqs));
-        } else {
-            size_t index = 0;
-            json_t *value = NULL;
-            json_array_foreach(req, index, value) {
-                json_array_append(reqs, json_incref(value));
-            }
-        }
+    json_t* resps = json_object_get(top, "responses");
+    assert_non_null(resps);
+    assert_int_equal(2u, json_array_size(resps));
 
-        json_t* resp = json_object_get(obj, "responses");
-        if(!resps) {
-            resps = resp;
-            json_object_set(top, "responses", json_incref(resps));
-        } else {
-            size_t index = 0;
-            json_t *value = NULL;
-            json_array_foreach(resp, index, value) {
-                json_array_append(resps, json_incref(value));
-            }
-        }
-
-        json_decref(obj);
-    }
-    dslink_vector_foreach_end();
-    vector_free(&send_queue);
-
-    char* s = json_dumps(top, JSON_PRESERVE_ORDER);
-    printf("%s\n", s);
+    char* result = json_dumps(top, JSON_PRESERVE_ORDER);
     json_decref(top);
+
+    const char* expected = "{\"requests\": [{\"method\": \"close\", \"rid\": 2913}, {\"method\": \"close\", \"rid\": 2912}, {\"method\": \"close\", \"rid\": 2911}, {\"method\": \"close\", \"rid\": 2907}], \"responses\": [{\"stream\": \"open\", \"rid\": 1646, \"updates\": [[\"testnode_00121\", {\"$is\": \"node\", \"$name\": \"testnode_00121\"}]]}, {\"stream\": \"open\", \"rid\": 1646, \"updates\": [[\"testnode_00122\", {\"$is\": \"node\", \"$name\": \"testnode_00122\"}]]}]}";
+
+    assert_string_equal(expected, result);
 }
 
 

@@ -145,6 +145,7 @@ set(DSLINK_SRC
     "${DSLINK_SRC_DIR}/dslink.c"
     "${DSLINK_SRC_DIR}/handshake.c"
     "${DSLINK_SRC_DIR}/log.c"
+    "${DSLINK_SRC_DIR}/message_utils.c"
     "${DSLINK_SRC_DIR}/node.c"
     "${DSLINK_SRC_DIR}/socket.c"
     "${DSLINK_SRC_DIR}/url.c"
