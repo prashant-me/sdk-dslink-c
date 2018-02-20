@@ -15,6 +15,7 @@ set(SDK_TEST_SET
     "col_ringbuf_test"
     "utils_test"
     "thread_safe_api_test"
+    "json_merge_test"
 )
 
 set(BROKER_TEST_SET

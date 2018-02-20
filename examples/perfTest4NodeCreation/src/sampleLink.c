@@ -284,12 +284,13 @@ static void ConsumerCreateProc( uv_timer_t *handle )
     DSNode          *newNode        = NULL;
     ref_t           *refParent      = NULL;
 
-    log_debug("Node creation command uv timer function invoked\n");
+    //log_debug("Node creation command uv timer function invoked\n");
     if( queueCtx == NULL ) {
         uv_timer_stop( handle );
         return;
     }
 
+    size_t count = 100;
     do {
         data = (SampleQueueData *)SampleDequeue( queueCtx );
         if(data == NULL ) {
@@ -339,7 +340,7 @@ static void ConsumerCreateProc( uv_timer_t *handle )
         }
 
         DeleteSampleQueueData( data );
-    } while( 0 );
+    } while( count-- );
 
     if( receivedEndTime != 0 ) {
         int64_t diffTime = 0;
