@@ -395,8 +395,8 @@ void recv_frame_cb(wslay_event_context_ptr ctx,
     if ((resps || reqs) && msg) {
         json_t *top = json_object();
         json_object_set_new(top, "ack", msg);
-        dslink_ws_send_obj_internal(link->_ws, top);
-        json_delete(top);
+        dslink_ws_send_obj(link, top);
+        json_decref(top);
     } else {
         json_decref(msg);
     }
@@ -413,8 +413,8 @@ void ping_handler(uv_timer_t *timer) {
 
     DSLink *link = timer->data;
     json_t *obj = json_object();
-    dslink_ws_send_obj_internal(link->_ws, obj);
-    json_delete(obj);
+    dslink_ws_send_obj(link, obj);
+    json_decref(obj);
 }
 
 static
