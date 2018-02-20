@@ -36,7 +36,7 @@ void invoke_send_one_row(DSLink *link, DSNode *node,
     json_object_set_new_nocheck(resp, "stream", json_string("closed"));
     json_object_set_nocheck(resp, "rid", rid);
     dslink_ws_send_obj((struct wslay_event_context *) link->_ws, top);
-    json_delete(top);
+    json_decref(top);
 }
 
 static
@@ -74,7 +74,7 @@ void invoke_send_echo(DSLink *link, DSNode *node,
     json_object_set_new_nocheck(resp, "stream", json_string("closed"));
     json_object_set_nocheck(resp, "rid", rid);
     dslink_ws_send_obj((struct wslay_event_context *) link->_ws, top);
-    json_delete(top);
+    json_decref(top);
 }
 
 static
@@ -113,7 +113,7 @@ void invoke_send_multiple_rows(DSLink *link, DSNode *node,
     json_object_set_new_nocheck(resp, "stream", json_string("closed"));
     json_object_set_nocheck(resp, "rid", rid);
     dslink_ws_send_obj((struct wslay_event_context *) link->_ws, top);
-    json_delete(top);
+    json_decref(top);
 }
 
 static
@@ -155,7 +155,7 @@ void invoke_send_multiple_rows_multiple_updates(DSLink *link, DSNode *node,
             json_object_set_new_nocheck(resp, "stream", json_string("closed"));
         }
         dslink_ws_send_obj((struct wslay_event_context *) link->_ws, top);
-        json_delete(top);
+        json_decref(top);
     }
 }
 
@@ -200,7 +200,7 @@ void do_stream_number_tick(uv_timer_t *timer) {
     json_array_append_new(resps, resp);
     json_object_set_nocheck(resp, "rid", holder->rid);
     dslink_ws_send_obj((struct wslay_event_context *) holder->link->_ws, top);
-    json_delete(top);
+    json_decref(top);
 }
 
 static void invoke_onclose_stream_numbers(uv_handle_t *timer) {

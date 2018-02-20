@@ -176,8 +176,8 @@ int dslink_response_list(DSLink *link, json_t *req, DSNode *node) {
         }
     }
 
-    dslink_ws_send_obj(link->_ws, top);
+    dslink_ws_send_obj(link, top);
+    json_decref(top);
 
-    json_delete(top);
     return 0;
 }

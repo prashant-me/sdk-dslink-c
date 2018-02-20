@@ -438,6 +438,8 @@ int dslink_init_do(DSLink *link, DSLinkCallbacks *cbs) {
 
     link->_socket = sock;
 
+    uv_prepare_start(&link->_process_send_queue, process_send_events);
+
     if (cbs->on_connected_cb) {
         cbs->on_connected_cb(link);
     }
@@ -452,6 +454,8 @@ int dslink_init_do(DSLink *link, DSLinkCallbacks *cbs) {
     if (link->closing != 1) {
         ret = 2;
     }
+
+    uv_prepare_stop(&link->_process_send_queue);
 
     exit:
     if (link->is_responder) {
@@ -598,6 +602,8 @@ void dslink_async_run(uv_async_t *async_handle) {
     dslink_free(async_data);
 }
 
+
+
 int dslink_init(int argc, char **argv,
                 const char *name, uint8_t isRequester,
                 uint8_t isResponder, DSLinkCallbacks *cbs) {
@@ -605,6 +611,11 @@ int dslink_init(int argc, char **argv,
     bzero(link, sizeof(DSLink));
     uv_loop_init(&link->loop);
     link->loop.data = link;
+
+    if(uv_prepare_init(&link->loop, &link->_process_send_queue)) {
+        log_warn("Prepare handle init error\n");
+    }
+    vector_init(&link->_send_queue, 10, sizeof(json_t*));
 
     //thread-safe API async handle set
     if(uv_async_init(&link->loop, &link->async_get, dslink_async_get_node_value)) {

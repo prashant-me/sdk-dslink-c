@@ -11,6 +11,8 @@ extern "C" {
 #include "socket.h"
 #include "node.h"
 #include "url.h"
+#include "dslink/col/vector.h"
+
 
 typedef struct DSLinkCallbacks DSLinkCallbacks;
 typedef struct DSLinkConfig DSLinkConfig;
@@ -41,6 +43,9 @@ struct DSLink {
 
     int closing;
     int closingSendThread;
+
+    uv_prepare_t _process_send_queue; // Processes queued send events
+    Vector _send_queue; // Send event queue
 
     struct wslay_event_context *_ws; // Event context for WSLay
     Socket *_socket; // Socket for the _ws connection

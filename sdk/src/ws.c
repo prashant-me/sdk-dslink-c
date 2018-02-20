@@ -27,6 +27,34 @@
     "Sec-WebSocket-Version: 13\r\n" \
     "\r\n"
 
+
+static int dslink_ws_send(struct wslay_event_context* ctx, const char* data);
+static int dslink_ws_send_obj_internal(wslay_event_context_ptr ctx, json_t *obj);
+
+
+int dslink_ws_send_obj(DSLink *link, json_t *obj)
+{
+    if(vector_append(&link->_send_queue, &obj) >= 0) {
+        json_incref(obj);
+        return 0;
+    }
+    return 1;
+}
+
+void process_send_events(uv_prepare_t* handle)
+{
+    DSLink* link = handle->loop->data;
+    if(vector_count(&link->_send_queue)) {
+        dslink_vector_foreach(&link->_send_queue) {
+            json_t* obj = (json_t*)(*(void**)data);
+            dslink_ws_send_obj_internal(link->_ws, obj);
+            json_decref(obj);
+        }
+        dslink_vector_foreach_end();
+        vector_free(&link->_send_queue);
+    }
+}
+
 static
 int gen_mask_cb(wslay_event_context_ptr ctx,
                 uint8_t *buf, size_t len,
@@ -106,7 +134,8 @@ void io_handler(uv_poll_t *poll, int status, int events) {
     }
 }
 
-int dslink_ws_send_obj(wslay_event_context_ptr ctx, json_t *obj) {
+static
+int dslink_ws_send_obj_internal(wslay_event_context_ptr ctx, json_t *obj) {
     DSLink *link = ctx->user_data;
     uint32_t msg = dslink_incr_msg(link);
 
@@ -154,6 +183,7 @@ int dslink_ws_send_internal(wslay_event_context_ptr ctx, const char *data, uint8
     return -1;
 }
 
+static
 int dslink_ws_send(struct wslay_event_context* ctx, const char* data) {
     return dslink_ws_send_internal(ctx, data, 0);
 }
@@ -335,7 +365,7 @@ void recv_frame_cb(wslay_event_context_ptr ctx,
     if ((resps || reqs) && msg) {
         json_t *top = json_object();
         json_object_set_new(top, "ack", msg);
-        dslink_ws_send_obj(link->_ws, top);
+        dslink_ws_send_obj_internal(link->_ws, top);
         json_delete(top);
     } else {
         json_decref(msg);
@@ -353,7 +383,7 @@ void ping_handler(uv_timer_t *timer) {
 
     DSLink *link = timer->data;
     json_t *obj = json_object();
-    dslink_ws_send_obj(link->_ws, obj);
+    dslink_ws_send_obj_internal(link->_ws, obj);
     json_delete(obj);
 }
 

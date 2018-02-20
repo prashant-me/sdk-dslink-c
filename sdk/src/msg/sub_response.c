@@ -24,8 +24,8 @@ int dslink_response_send_closed(DSLink *link, json_t *rid) {
     json_array_append_new(resps, resp);
     json_object_set(resp, "rid", rid);
     json_object_set_new_nocheck(resp, "stream", json_string_nocheck("closed"));
-    dslink_ws_send_obj(link->_ws, top);
-    json_delete(top);
+    dslink_ws_send_obj(link, top);
+    json_decref(top);
     return 0;
 }
 
@@ -75,9 +75,9 @@ void dslink_response_send_val(DSLink *link,
     json_array_append(update, node->value);
     json_array_append(update, node->value_timestamp);
 
-    dslink_ws_send_obj(link->_ws, top);
+    dslink_ws_send_obj(link, top);
 
-    json_delete(top);
+    json_decref(top);
 }
 
 int dslink_response_sub(DSLink *link, json_t *paths, json_t *rid) {

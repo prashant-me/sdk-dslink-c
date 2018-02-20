@@ -32,7 +32,7 @@ void delete_nodes(DSLink *link, DSNode *node,
     json_object_set_nocheck(resp, "rid", rid);
     json_object_set_new_nocheck(resp, "stream", json_string("closed"));
     dslink_ws_send_obj((struct wslay_event_context *) link->_ws, top);
-    json_delete(top);
+    json_decref(top);
 
     node = node->parent;
     for (int i = 0; i <= NODE_COUNT; ++i) {

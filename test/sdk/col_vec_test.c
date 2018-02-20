@@ -577,6 +577,24 @@ void col_vec_remove_if_test(void **state)
     }
 }
 
+static
+void col_vec_append_pointer_test(void **state) {
+    (void) state;
+
+    Vector vec;
+    vector_init(&vec, 10, sizeof(int*));
+
+    int n = 4711;
+    int* pn = &n;
+    long index = vector_append(&vec, &pn);
+    assert_int_equal(index, 0);
+
+    void** pp = vector_get(&vec, index);
+    assert_int_equal(*((int*)*pp), 4711);
+
+    vector_free(&vec);
+}
+
 
 int main() {
     const struct CMUnitTest tests[] = {
@@ -586,7 +604,7 @@ int main() {
         cmocka_unit_test(col_vec_resize_test),
         cmocka_unit_test(col_vec_set_get_test),
         cmocka_unit_test(col_vec_erase_test),
-	cmocka_unit_test(col_vec_remove_if_test),
+	    cmocka_unit_test(col_vec_remove_if_test),
         cmocka_unit_test(col_vec_iterate_test),
         cmocka_unit_test(col_vec_find_test),
         cmocka_unit_test(col_vec_count_test),
@@ -596,6 +614,7 @@ int main() {
         cmocka_unit_test(col_vec_upper_bound_test),
         cmocka_unit_test(col_vec_upper_bound_range_test),
         cmocka_unit_test(col_vec_range_erase_test),
+        cmocka_unit_test(col_vec_append_pointer_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

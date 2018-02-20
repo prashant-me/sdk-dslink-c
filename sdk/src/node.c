@@ -137,9 +137,9 @@ int dslink_node_add_child(DSLink *link, DSNode *node) {
     }
     json_array_append_new(updates, update);
     dslink_response_list_append_child(update, node);
-    dslink_ws_send_obj(link->_ws, top);
+    dslink_ws_send_obj(link, top);
 cleanup:
-    json_delete(top);
+    json_decref(top);
     return ret;
 }
 
@@ -285,9 +285,9 @@ void dslink_node_tree_free(DSLink *link, DSNode *root) {
                 }
             }
             if (send) {
-                dslink_ws_send_obj(link->_ws, top);
+                dslink_ws_send_obj(link, top);
             }
-            json_delete(top);
+            json_decref(top);
         }
     }
 cleanup:
@@ -397,10 +397,10 @@ int dslink_node_set_meta(DSLink *link, DSNode *node,
         json_array_append_new(updates, update);
     }
 
-    dslink_ws_send_obj(link->_ws, top);
+    dslink_ws_send_obj(link, top);
 
     cleanup:
-        json_delete(top);
+        json_decref(top);
 
     return 0;
 }
