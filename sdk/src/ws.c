@@ -46,7 +46,7 @@ void process_send_events(uv_prepare_t* handle)
 {
     DSLink* link = handle->loop->data;
     if(vector_count(&link->_send_queue)) {
-        log_info("Processing events (%d)...\n", vector_count(&link->_send_queue));
+        log_debug("Processing events (%d)...\n", vector_count(&link->_send_queue));
         json_t* top = merge_queue_messages(&link->_send_queue);
         dslink_ws_send_obj_internal(link->_ws, top);
         json_decref(top);
