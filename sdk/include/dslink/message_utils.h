@@ -9,7 +9,7 @@ extern "C" {
 
 #include "dslink/col/vector.h"
 
-json_t* merge_queue_messages(Vector* send_queue);
+json_t* merge_queue_messages(Vector* send_queue, uint32_t count);
 
 #ifdef __cplusplus
 }

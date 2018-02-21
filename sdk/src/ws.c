@@ -45,20 +45,11 @@ int dslink_ws_send_obj(DSLink *link, json_t *obj)
 void process_send_events(uv_prepare_t* handle)
 {
     DSLink* link = handle->loop->data;
-    if(vector_count(&link->_send_queue)) {
-        log_debug("Processing events (%d)...\n", vector_count(&link->_send_queue));
-        json_t* top = merge_queue_messages(&link->_send_queue);
+    while(vector_count(&link->_send_queue)) {
+        log_info("Processing events (%d)...\n", vector_count(&link->_send_queue));
+        json_t* top = merge_queue_messages(&link->_send_queue, link->config.messageMergeCount);
         dslink_ws_send_obj_internal(link->_ws, top);
         json_decref(top);
-/*
-        dslink_vector_foreach(&link->_send_queue) {
-            json_t* obj = (json_t*)(*(void**)data);
-            dslink_ws_send_obj_internal(link->_ws, obj);
-            json_decref(obj);
-        }
-        dslink_vector_foreach_end();
-        vector_erase_range(&link->_send_queue, 0, vector_count(&link->_send_queue));
-*/
     }
 }
 

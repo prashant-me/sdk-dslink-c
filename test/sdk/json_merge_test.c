@@ -38,7 +38,7 @@ void json_merge_test(void **state) {
         vector_append(&send_queue, &resp);
     }
 
-    json_t* top = merge_queue_messages(&send_queue);
+    json_t* top = merge_queue_messages(&send_queue, 10);
     assert_int_equal(0, vector_count(&send_queue));
     vector_free(&send_queue);
 

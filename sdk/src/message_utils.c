@@ -2,19 +2,18 @@
 #include "dslink/message_utils.h"
 
 
-typedef struct Rid
-{
-    json_int_t _rid;
-    json_t* _json;
-} tRid;
-
-json_t* merge_queue_messages(Vector* send_queue)
+json_t* merge_queue_messages(Vector* send_queue, uint32_t count)
 {
     json_t* top = json_object();
     json_t* reqs = NULL;
     json_t *resps = NULL;
 
+    uint32_t processed = 0;
     dslink_vector_foreach(send_queue) {
+        if(processed == count) {
+            break;
+        }
+
         json_t* obj = (json_t*)(*(void**)data);
 
         json_t* req = json_object_get(obj, "requests");
@@ -42,9 +41,10 @@ json_t* merge_queue_messages(Vector* send_queue)
         }
 
         json_decref(obj);
+        ++processed;
     }
     dslink_vector_foreach_end();
-    vector_erase_range(send_queue, 0, vector_count(send_queue));
+    vector_erase_range(send_queue, 0, processed);
 
     return top;
 }

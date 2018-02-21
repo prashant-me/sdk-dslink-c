@@ -35,6 +35,7 @@ struct DSLinkConfig {
     Url *broker_url;
     const char *name;
     const char *token;
+    uint32_t messageMergeCount;
 };
 
 struct DSLink {

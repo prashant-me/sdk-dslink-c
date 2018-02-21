@@ -33,6 +33,9 @@ for (void* data = (vector)->data; n < (vector)->size; ++n, data = (char*)(vector
     /// @return 0 if the vector could be initialized successfully, otherwise -1
     int vector_init(Vector* vec, uint32_t initial_size, size_t element_size);
 
+    /// Returns the number of elements in the vector.
+    /// @param vec The vector to initialize
+    /// @return Returns the number of elements in vec or 0 if vec is invalid.
     uint32_t vector_count(const Vector* vec);
 
     /// Adds a value to the end of the vector, also known as push back.

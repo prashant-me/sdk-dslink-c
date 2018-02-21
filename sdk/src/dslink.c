@@ -135,6 +135,11 @@ int dslink_parse_opts(int argc,
         }
     }
 
+    json_t *mmc = dslink_json_raw_get_config(json, "messageMergeCount");
+    if(mmc) {
+        config->messageMergeCount = json_integer_value(mmc);
+    }
+
     if (!config->broker_url) {
         log_fatal("Failed to parse broker url\n");
         ret = 1;
@@ -241,6 +246,7 @@ static
 int handle_config(DSLinkConfig *config, const char *name, int argc, char **argv) {
     memset(config, 0, sizeof(DSLinkConfig));
     config->name = strdup(name);
+    config->messageMergeCount = 10u;
 
     int ret = 0;
     if ((ret = dslink_parse_opts(argc, argv, config)) != 0) {
