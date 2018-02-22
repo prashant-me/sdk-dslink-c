@@ -156,6 +156,7 @@ void upstream_handshake_handle_ws(UpstreamPoll *upstreamPoll) {
     if(!link) {
         return;
     }
+    log_debug("Upstream ws handshake %s\n", link->name);
 
     Client * client = dslink_calloc(1, sizeof(Client));
     link->client = client;
@@ -165,7 +166,6 @@ void upstream_handshake_handle_ws(UpstreamPoll *upstreamPoll) {
     client->sock_data = link;
 
     upstreamPoll->remoteDSLink = link;
-
 
     wslay_event_context_ptr ptr;
     if (wslay_event_context_client_init(&ptr, &callbacks, link) != 0) {
@@ -202,6 +202,8 @@ void connect_conn_callback(uv_poll_t *handle, int status, int events) {
 
     char *resp = NULL;
 
+    log_debug("Upstream connected, read response\n");
+
     int respLen = 0;
     while (1) {
         char buf[1024];
@@ -236,6 +238,8 @@ void connect_conn_callback(uv_poll_t *handle, int status, int events) {
         }
     }
 
+    log_debug("Upstream handshake response: %s\n", resp);
+
     json_t *handshake = NULL;
     int res = dslink_parse_handshake_response(resp, &handshake);
     if(res == DSLINK_HANDSHAKE_MOVED_PERMANENTLY) {
@@ -266,6 +270,9 @@ void connect_conn_callback(uv_poll_t *handle, int status, int events) {
             goto exit;
         }
 
+        log_debug("Connecting ws to: %s:%d\n",
+                  upstreamPoll->clientDslink->config.broker_url->host,
+                  upstreamPoll->clientDslink->config.broker_url->port);
         if ((dslink_handshake_connect_ws(upstreamPoll->clientDslink->config.broker_url, &upstreamPoll->clientDslink->key, uri,
                                          tKey, salt, upstreamPoll->dsId, NULL, &upstreamPoll->sock)) != 0) {
             upstream_reconnect(upstreamPoll);
@@ -358,7 +365,9 @@ void upstream_connect_conn(UpstreamPoll *upstreamPoll) {
 
     upstreamPoll->clientDslink = clientDslink;
 
-    log_debug("Trying to connect to %s\n", clientDslink->config.broker_url->host);
+    log_debug("Trying to connect to %s:%d\n",
+              clientDslink->config.broker_url->host,
+              clientDslink->config.broker_url->port);
     if (dslink_socket_connect_async(upstreamPoll, clientDslink->config.broker_url->host,
                               clientDslink->config.broker_url->port,
                               clientDslink->config.broker_url->secure) != 0) {
