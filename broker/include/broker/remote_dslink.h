@@ -12,10 +12,12 @@ extern "C" {
 
 #include <dslink/col/map.h>
 #include <dslink/col/listener.h>
+#include <dslink/col/vector.h>
 #include <dslink/socket.h>
 
 #include "broker/net/server.h"
 #include "broker/permission/permission.h"
+
 
 typedef struct RemoteAuth {
 
@@ -36,6 +38,9 @@ typedef struct RemoteDSLink {
     struct timeval *lastWriteTime;
     uv_timer_t *pingTimerHandle;
     struct timeval *lastReceiveTime;
+
+    uv_prepare_t _process_send_queue; // Processes queued send events
+    Vector _send_queue; // Send event queue
 
     wslay_event_context_ptr ws;
     Client *client;

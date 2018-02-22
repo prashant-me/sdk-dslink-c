@@ -31,8 +31,8 @@
     "\r\n"
 
 
-static int dslink_ws_send(struct wslay_event_context* ctx, const char* data);
 static int dslink_ws_send_obj_internal(wslay_event_context_ptr ctx, json_t *obj);
+static int dslink_ws_send_internal(wslay_event_context_ptr ctx, const char *data);
 
 
 int dslink_ws_send_obj(DSLink *link, json_t *obj)
@@ -151,7 +151,7 @@ int dslink_ws_send_obj_internal(wslay_event_context_ptr ctx, json_t *obj) {
         return DSLINK_ALLOC_ERR;
     }
 
-    dslink_ws_send(ctx, data);
+    dslink_ws_send_internal(ctx, data);
     dslink_free(data);
 
     json_object_del(obj, "msg");
@@ -160,9 +160,7 @@ int dslink_ws_send_obj_internal(wslay_event_context_ptr ctx, json_t *obj) {
     return 0;
 }
 
-static
-int dslink_ws_send_internal(wslay_event_context_ptr ctx, const char *data, uint8_t resend) {
-    (void) resend;
+static int dslink_ws_send_internal(wslay_event_context_ptr ctx, const char *data) {
     struct wslay_event_msg msg;
     msg.msg = (const uint8_t *) data;
     msg.msg_length = strlen(data);
@@ -187,10 +185,6 @@ int dslink_ws_send_internal(wslay_event_context_ptr ctx, const char *data, uint8
     return -1;
 }
 
-static
-int dslink_ws_send(struct wslay_event_context* ctx, const char* data) {
-    return dslink_ws_send_internal(ctx, data, 0);
-}
 
 int dslink_handshake_connect_ws(Url *url,
                                 mbedtls_ecdh_context *key,

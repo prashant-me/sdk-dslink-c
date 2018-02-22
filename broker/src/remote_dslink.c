@@ -21,10 +21,16 @@ int broker_remote_dslink_init(RemoteDSLink *link) {
         return 1;
     }
     permission_groups_init(&link->permission_groups);
+
+    // TODO: error handling
+    uv_prepare_init(uv_default_loop(), &link->_process_send_queue);
+    uv_prepare_start(&link->_process_send_queue, process_send_events);
     return 0;
 }
 
 void broker_remote_dslink_free(RemoteDSLink *link) {
+    uv_prepare_stop(&link->_process_send_queue);
+    
     if (link->auth) {
         mbedtls_ecdh_free(&link->auth->tempKey);
         DSLINK_CHECKED_EXEC(free, (void *) link->auth->pubKey);
