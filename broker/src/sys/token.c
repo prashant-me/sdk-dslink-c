@@ -81,6 +81,7 @@ void clear_managed_link(const char * name){
         const char * tokenstr = json_string_value(tokenjson);
         if (tokenstr && strcmp(tokenstr, name) == 0) {
             if (dsn->link) {
+                log_debug("clear_managed_link: Removing managed link: %s", dsn->name);
                 broker_close_link(dsn->link);
                 dsn->link = NULL;
             }

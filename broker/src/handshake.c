@@ -268,6 +268,7 @@ void dslink_handle_ping(uv_timer_t* handle) {
         gettimeofday(&current_time, NULL);
         long time_diff = current_time.tv_sec - link->lastReceiveTime->tv_sec;
         if (time_diff >= 90) {
+            log_debug("Didn't receive ping message for 90 seconds. Disconnectiing...")
             broker_close_link(link);
         }
     }
@@ -283,6 +284,7 @@ int broker_handshake_handle_ws(Broker *broker,
     ref_t *ref = dslink_map_remove_get(&broker->client_connecting,
                                        (char *) dsId);
     if (!ref) {
+        log_err("broker_handshake_handle_ws: No ref for dsId %s\n", dsId);
         return 1;
     }
     RemoteDSLink *link = ref->data;
@@ -292,6 +294,7 @@ int broker_handshake_handle_ws(Broker *broker,
                           (char *) link->name);
     }
     if (!(auth && link->auth->pubKey)) {
+        log_err("broker_handshake_handle_ws: Error when trying to authenticate\n");
         return 1;
     }
 
@@ -299,6 +302,7 @@ int broker_handshake_handle_ws(Broker *broker,
     int ret = 0;
     { // Perform auth check
         char expectedAuth[90];
+        log_debug("broker_handshake_handle_ws: Generating auth key\n");
         if (dslink_handshake_gen_auth_key(&link->auth->tempKey,
                                           link->auth->pubKey,
                                           link->auth->salt,
@@ -320,6 +324,7 @@ int broker_handshake_handle_ws(Broker *broker,
         ref = dslink_map_get(broker->downstream->children,
                                     (char *) link->name);
         if (!ref) {
+            log_debug("broker_handshake_handle_ws: Initializing downstream node\n");
             node = broker_init_downstream_node(broker->downstream, link->name);
             if (!node) {
                 ret = 1;
@@ -338,6 +343,7 @@ int broker_handshake_handle_ws(Broker *broker,
 
     if (node->link) {
 //        Client *c = node->link->client;
+        log_debug("Closing link %s in broker_handshake_handle_ws\n", node->link->name);
         broker_close_link(node->link);
 //        uv_poll_t *poll = c->poll;
 //        dslink_socket_free(c->sock);
@@ -347,6 +353,7 @@ int broker_handshake_handle_ws(Broker *broker,
     
     // add permission group to link
     if (node->groups) {
+        log_debug("Adding groups for links\n");
         permission_groups_load(&link->permission_groups, dsId, json_string_value(node->groups));
     } else {
         permission_groups_load(&link->permission_groups, dsId, NULL);
@@ -361,6 +368,7 @@ int broker_handshake_handle_ws(Broker *broker,
 
     json_object_set_new_nocheck(node->meta, "$$dsId", json_string_nocheck(dsId));
 
+    log_debug("broker_handshake_handle_ws: Initializing server\n");
     wslay_event_context_ptr ws;
     if (wslay_event_context_server_init(&ws,
                                         broker_ws_callbacks(),
@@ -389,6 +397,7 @@ int broker_handshake_handle_ws(Broker *broker,
     log_info("DSLink `%s` has connected\n", dsId);
 
 exit:
+    log_err("broker_handshake_handle_ws: Error during handshake. Connection will be closed.\n");
     mbedtls_ecdh_free(&link->auth->tempKey);
     dslink_free((void *) link->auth->pubKey);
     dslink_free(link->auth);

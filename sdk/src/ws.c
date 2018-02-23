@@ -15,6 +15,8 @@
 #include "dslink/ws.h"
 #include "dslink/utils.h"
 
+#include <sys/time.h>
+
 #define LOG_TAG "ws"
 #include "dslink/log.h"
 
@@ -82,7 +84,9 @@ void io_handler(uv_poll_t *poll, int status, int events) {
 
     if (events & UV_READABLE) {
         int stat = wslay_event_recv(link->_ws);
-        if(stat != 0) {
+        if(stat != 0 ||
+           link->_ws->read_enabled == 0 ||
+           link->_ws->write_enabled == 0) {
             log_debug("Stopping dslink loop...\n");
             uv_stop(&link->loop);
             return;
@@ -97,7 +101,9 @@ void io_handler(uv_poll_t *poll, int status, int events) {
             log_debug("Enabling READ/WRITE poll on link\n");
             uv_poll_start(poll, UV_READABLE | UV_WRITABLE, io_handler);
             int stat = wslay_event_send(link->_ws);
-            if(stat != 0) {
+            if(stat != 0 ||
+               link->_ws->read_enabled == 0 ||
+               link->_ws->write_enabled == 0) {
                 log_debug("Stopping dslink loop...\n");
                 uv_stop(&link->loop);
                 return;
@@ -295,6 +301,8 @@ void recv_frame_cb(wslay_event_context_ptr ctx,
     }
 
     DSLink *link = user_data;
+    gettimeofday(&link->lastReceiveTime, NULL);
+
     json_error_t err;
     json_t *obj = json_loadb((char *) arg->msg, arg->msg_length,
                              JSON_PRESERVE_ORDER, &err);
@@ -355,6 +363,14 @@ void ping_handler(uv_timer_t *timer) {
     json_t *obj = json_object();
     dslink_ws_send_obj(link->_ws, obj);
     json_delete(obj);
+
+    struct timeval current_time;
+    gettimeofday(&current_time, NULL);
+    long time_diff = current_time.tv_sec - link->lastReceiveTime.tv_sec;
+    if (time_diff >= 90) {
+        log_debug("Broker didn't send any requests for 90 seconds. Stopping dslink loop...\n");
+        uv_stop(&link->loop);
+    }
 }
 
 static
@@ -396,6 +412,7 @@ void dslink_handshake_handle_ws(DSLink *link, link_callback on_requester_ready_c
     {
         uv_timer_init(&link->loop, ping);
         ping->data = link;
+        gettimeofday(&link->lastReceiveTime, NULL);
         uv_timer_start(ping, ping_handler, 0, 30000);
     }
 
