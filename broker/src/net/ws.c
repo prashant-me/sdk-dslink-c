@@ -74,8 +74,20 @@ uint32_t broker_ws_send_obj(RemoteDSLink *link, json_t *obj) {
     if(link->msgId == 2147483647) {
         link->msgId = 0;
     }
+
+    static int count = 0;
+
     json_object_set_new_nocheck(obj, "msg", json_integer(id));
-    char *data = json_dumps(obj, JSON_PRESERVE_ORDER | JSON_COMPACT);
+
+    char *data = 0;
+    if(++count != 15) { 
+        data = json_dumps(obj, JSON_PRESERVE_ORDER | JSON_COMPACT);
+    } else {
+        json_t* obj = json_object();
+        json_object_set_new_nocheck(obj, "msg", json_integer(id));
+        data = json_dumps(obj, JSON_PRESERVE_ORDER | JSON_COMPACT);
+        log_debug("WUAHAHAHAHAHQHAHQHAH!\n");
+    }
     json_object_del(obj, "msg");
 
     if (!data) {

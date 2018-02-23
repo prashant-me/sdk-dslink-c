@@ -62,6 +62,7 @@ void broker_server_client_ready(uv_poll_t *poll,
                 client = NULL;
             }
         } else if (status == -EBADF && events ==0) {
+            log_err("broker_server_client_ready: connection error");
             //broker_server_client_fail(poll);
             // The callback closed the connection
             RemoteDSLink *link = client->sock_data;
@@ -86,6 +87,7 @@ void broker_server_client_ready(uv_poll_t *poll,
                     if(stat != 0 ||
                        link->ws->read_enabled == 0 ||
                        link->ws->write_enabled == 0) {
+                        log_err("broker_server_client_ready: Error when writing to socket");
                         broker_close_link(link);
                         client = NULL;
                     }
@@ -116,6 +118,7 @@ void broker_ssl_server_client_ready(uv_poll_t *poll,
     } else if (status == -EBADF && events ==0 && client) {
         // broker_server_client_fail(poll);
         // The callback closed the connection
+        log_err("broker_ssl_server_client_ready: connection error");
         RemoteDSLink *link = client->sock_data;
         if (link) {
             broker_close_link(link);
@@ -138,6 +141,7 @@ void broker_ssl_server_client_ready(uv_poll_t *poll,
                 if(stat != 0 ||
                    link->ws->read_enabled == 0 ||
                    link->ws->write_enabled == 0) {
+                    log_err("broker_ssl_server_client_ready: Error when writing to socket");
                     broker_close_link(link);
                     client = NULL;
                 }

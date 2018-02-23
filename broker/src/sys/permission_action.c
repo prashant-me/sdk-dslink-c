@@ -1,3 +1,6 @@
+#define LOG_TAG "permission"
+#include <dslink/log.h>
+
 #include <broker/sys/permission_action.h>
 #include <broker/node.h>
 #include <broker/utils.h>
@@ -146,7 +149,7 @@ void update_permission_group(RemoteDSLink *link,
                 update_list_attribute((BrokerNode*)child, stream ,"$$group", Group);
             }
 
-
+            log_debug("update_permission_group: Closing connection");
             broker_downstream_nodes_changed(broker);
             if (child->link) {
                 broker_close_link(child->link);
