@@ -23,6 +23,8 @@
 void broker_ws_send_init(Socket *sock, const char *accept) {
     char buf[1024];
     int bLen = snprintf(buf, sizeof(buf), BROKER_WS_RESP, accept);
+
+    // TODO: while((written = dslink_socket_write(sock, (char *) buf, bLen)) < 0 && errno == EINTR);
     dslink_socket_write(sock, buf, (size_t) bLen);
 }
 
@@ -59,6 +61,7 @@ uint32_t broker_ws_send_obj_link_id(struct Broker* broker, const char *link_name
     }
 
     if(!ref) {
+        log_warn("broker_ws_send_obj_link_id: No reference for given link name %s", link_name);
         return -1;
     }
 
@@ -75,22 +78,13 @@ uint32_t broker_ws_send_obj(RemoteDSLink *link, json_t *obj) {
         link->msgId = 0;
     }
 
-    static int count = 0;
-
     json_object_set_new_nocheck(obj, "msg", json_integer(id));
-
-    char *data = 0;
-    if(++count != 15) { 
-        data = json_dumps(obj, JSON_PRESERVE_ORDER | JSON_COMPACT);
-    } else {
-        json_t* obj = json_object();
-        json_object_set_new_nocheck(obj, "msg", json_integer(id));
-        data = json_dumps(obj, JSON_PRESERVE_ORDER | JSON_COMPACT);
-        log_debug("WUAHAHAHAHAHQHAHQHAH!\n");
-    }
+    char* data = json_dumps(obj, JSON_PRESERVE_ORDER | JSON_COMPACT);
     json_object_del(obj, "msg");
 
     if (!data) {
+        log_err("broker_ws_send_obj: data is null. Could not allocate memory");
+        // TODO: DSLINK_ALLOC_ERR will be interpreted as message id by the calling function
         return DSLINK_ALLOC_ERR;
     }
     int sentBytes = broker_ws_send(link, data);
@@ -120,6 +114,7 @@ int broker_ws_send(RemoteDSLink *link, const char *data) {
         return (int)msg.msg_length;
     }
 
+    log_err("broker_ws_send: Error when sending message to %s", link->name)
     return -1;
 }
 

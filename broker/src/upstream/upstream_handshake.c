@@ -92,6 +92,7 @@ void upstream_reconnect(UpstreamPoll *upstreamPoll) {
 static
 void reconnect_if_error_occured(int stat, UpstreamPoll* upstreamPoll) {
     if(!upstreamPoll) {
+        log_err("reconnect_if_error_occured: Cannot reconnect, upstream poll is NULL\n");
         return;
     }
 
@@ -105,6 +106,7 @@ void upstream_io_handler(uv_poll_t *poll, int status, int events) {
     (void) events;
     UpstreamPoll *upstreamPoll = poll->data;
     if(!upstreamPoll || !upstreamPoll->ws) {
+        log_err("No upstreamPoll or upstreamPoll has no websocket attached\n");
         return;
     }
     if (status < 0) {
@@ -157,6 +159,7 @@ void upstream_handshake_handle_ws(UpstreamPoll *upstreamPoll) {
 
     RemoteDSLink *link = upstreamPoll->remoteDSLink;
     if(!link) {
+        log_debug("upstream_handshake_handle_ws: link is null\n");
         return;
     }
     log_debug("Upstream ws handshake %s\n", link->name);
@@ -173,6 +176,7 @@ void upstream_handshake_handle_ws(UpstreamPoll *upstreamPoll) {
     wslay_event_context_ptr ptr;
     if (wslay_event_context_client_init(&ptr, &callbacks, link) != 0) {
         upstreamPoll->status = UPSTREAM_NONE;
+        log_debug("upstream_handshake_handle_ws: wslay_event_context_client_init had an error\n");
         return;
     }
     upstreamPoll->ws = ptr;
@@ -196,6 +200,7 @@ void connect_conn_callback(uv_poll_t *handle, int status, int events) {
     UpstreamPoll *upstreamPoll = handle->data;
 
     if(!upstreamPoll) {
+        log_debug("connect_conn_callback: Upstream connected, read response\n");
         return;
     }
 
@@ -278,6 +283,7 @@ void connect_conn_callback(uv_poll_t *handle, int status, int events) {
                   upstreamPoll->clientDslink->config.broker_url->port);
         if ((dslink_handshake_connect_ws(upstreamPoll->clientDslink->config.broker_url, &upstreamPoll->clientDslink->key, uri,
                                          tKey, salt, upstreamPoll->dsId, NULL, &upstreamPoll->sock)) != 0) {
+            log_err("dslink_handshake_connect_ws failed. Trying to reconnect.");
             upstream_reconnect(upstreamPoll);
             goto exit;
         } else {
@@ -290,10 +296,12 @@ void connect_conn_callback(uv_poll_t *handle, int status, int events) {
         upstreamPoll->status = UPSTREAM_WS;
         upstreamPoll->reconnectInterval = 0;
     } else {
+        log_err("No handshake data. Trying to reconnect.");
         upstreamPoll->status = UPSTREAM_NONE;
         upstream_reconnect(upstreamPoll);
     }
     exit:
+    log_err("Exiting handshake function\n");
     json_decref(handshake);
 
 }
@@ -306,13 +314,17 @@ void disable_timer(uv_timer_t* timer, uv_close_cb callback) {
         return;
     }
 
+    log_debug("Disabling timer function\n");
     uv_timer_stop(timer);
     uv_close((uv_handle_t *)timer, callback);
 }
 
 void upstream_check_conn (uv_timer_t* handle) {
+
+    log_debug("upstream_check_conn: Check upstream connection\n");
     UpstreamPoll *upstreamPoll = handle->data;
     if(!upstreamPoll) {
+        log_debug("upstream_check_conn: No upstreampoll for handle\n");
         return;
     }
 
@@ -321,6 +333,7 @@ void upstream_check_conn (uv_timer_t* handle) {
     upstreamPoll->connCheckTimer = NULL;
 
     if (connectConnCheck(upstreamPoll) != 0) {
+        log_debug("upstream_check_conn: connectConnCheck failed\n");
         upstream_reconnect(upstreamPoll);
         return;
     }
@@ -330,6 +343,7 @@ void upstream_check_conn (uv_timer_t* handle) {
     char *conndata = dslink_handshake_generate_req(upstreamPoll->clientDslink, &dsId);
 
     if(DSLINK_SOCK_WRITE_ERR == dslink_socket_write(upstreamPoll->sock, conndata, strlen(conndata))) {
+        log_debug("upstream_check_conn: Error when writing to socket\n");
         upstream_reconnect(upstreamPoll);
         return;
     }
@@ -374,6 +388,7 @@ void upstream_connect_conn(UpstreamPoll *upstreamPoll) {
     if (dslink_socket_connect_async(upstreamPoll, clientDslink->config.broker_url->host,
                               clientDslink->config.broker_url->port,
                               clientDslink->config.broker_url->secure) != 0) {
+        log_debug("upstream_connect_conn: dslink_socket_connect_async failed\n");
         upstream_reconnect(upstreamPoll);
         return;
     }
@@ -391,6 +406,7 @@ void upstream_create_poll(const char *brokerUrl, const char *name, const char *i
 
     DownstreamNode *node = create_upstream_node(broker, name);
     if (node ->upstreamPoll) {
+        log_debug("upstream_create_poll: Node has no upstreampoll\n");
         return;
     }
 

@@ -1,3 +1,6 @@
+#define LOG_TAG "node"
+#include <dslink/log.h>
+
 #include "broker/broker.h"
 
 #include <stdlib.h>
@@ -260,6 +263,7 @@ void broker_node_free(BrokerNode *node) {
 
         virtual_downstream_free_map(&dnode->children_permissions);
         if (dnode->upstreamPoll) {
+            log_debug("broker_node_free: Clear poll\n");
             upstream_clear_poll(dnode->upstreamPoll);
             dslink_free(dnode->upstreamPoll);
         }

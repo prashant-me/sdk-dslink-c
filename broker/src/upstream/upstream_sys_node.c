@@ -123,6 +123,7 @@ void delete_upstream_invoke(RemoteDSLink *link,
     if (ref) {
         DownstreamNode *upstreamNode = ref->data;
         if (upstreamNode->upstreamPoll) {
+            log_debug("delete_upstream_invoke: Clear poll\n");
             upstream_clear_poll(upstreamNode->upstreamPoll);
             dslink_free(upstreamNode->upstreamPoll);
             upstreamNode->upstreamPoll = NULL;
@@ -143,6 +144,7 @@ int upstream_enable_changed(Listener * listener, void * node) {
         if (ref) {
             DownstreamNode *upstreamNode = ref->data;
             if (upstreamNode->upstreamPoll) {
+                log_debug("upstream_enable_changed: Clear poll\n");
                 upstream_clear_poll(upstreamNode->upstreamPoll);
                 dslink_free(upstreamNode->upstreamPoll);
                 upstreamNode->upstreamPoll = NULL;
