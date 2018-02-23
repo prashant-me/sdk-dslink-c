@@ -55,6 +55,8 @@ void upstream_clear_poll(UpstreamPoll *upstreamPoll) {
         freeaddrinfo( upstreamPoll->conCheckAddrList );
         upstreamPoll->conCheckAddrList = NULL;
     }
+
+    log_debug("upstream_clear_poll: Closing link\n");
     broker_close_link(upstreamPoll->remoteDSLink);
     upstream_free_dslink(upstreamPoll->clientDslink);
     upstreamPoll->clientDslink = NULL;
@@ -65,6 +67,7 @@ void upstream_clear_poll(UpstreamPoll *upstreamPoll) {
 }
 
 void upstrem_handle_reconnect(uv_timer_t* handle) {
+    log_info("reconnect triggered\n");
     UpstreamPoll *upstreamPoll = handle->data;
     upstream_connect_conn(upstreamPoll);
 }
