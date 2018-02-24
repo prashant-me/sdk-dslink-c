@@ -301,7 +301,6 @@ void connect_conn_callback(uv_poll_t *handle, int status, int events) {
         upstream_reconnect(upstreamPoll);
     }
     exit:
-    log_err("Exiting handshake function\n");
     json_decref(handshake);
 
 }

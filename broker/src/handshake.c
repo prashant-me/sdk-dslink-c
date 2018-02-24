@@ -268,7 +268,7 @@ void dslink_handle_ping(uv_timer_t* handle) {
         gettimeofday(&current_time, NULL);
         long time_diff = current_time.tv_sec - link->lastReceiveTime->tv_sec;
         if (time_diff >= 90) {
-            log_debug("Didn't receive ping message for 90 seconds. Disconnectiing...")
+            log_debug("Didn't receive ping message for 90 seconds. Disconnecting...\n")
             broker_close_link(link);
         }
     }

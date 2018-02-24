@@ -105,6 +105,7 @@ void send_subscribe_request(DownstreamNode *node,
     json_object_set_new_nocheck(p, "sid", json_integer(sid));
     json_object_set_new_nocheck(p, "qos", json_integer(qos));
 
+    log_debug("send_subscribe_request: Sending subscription request.\n");
     broker_ws_send_obj(node->link, top);
     json_decref(top);
 }
@@ -148,20 +149,25 @@ void serialize_qos_queue(SubRequester *subReq, uint8_t delete) {
 void broker_free_sub_requester(SubRequester *req) {
     dslink_map_remove(&req->reqNode->req_sub_paths, (void*)req->path);
 
+    log_debug("broker_free_sub_requester: Removing subscription requester.\n");
     if (req->reqSid != 0xFFFFFFFF) {
         // while still waiting for qos requester to connect
+        log_debug("broker_free_sub_requester: Still waiting for the qos requester to connect.\n");
         dslink_map_remove(&req->reqNode->req_sub_sids, &req->reqSid);
     }
 
     if (req->pendingNode) {
         // pending;
+        log_debug("broker_free_sub_requester: Removing pending node.\n");
         list_remove_node(req->pendingNode);
         dslink_free(req->pendingNode);
         req->pendingNode = NULL;
     }
     if (req->stream) {
+        log_debug("broker_free_sub_requester: Removing streams.\n");
         dslink_map_remove(&req->stream->reqSubs, req->reqNode);
         if (req->stream->reqSubs.size == 0) {
+            log_debug("broker_free_sub_requester: Subscription size is 0.\n");
             broker_stream_free((BrokerStream *)req->stream);
         }
     }
@@ -188,6 +194,8 @@ void broker_free_sub_requester(SubRequester *req) {
     dslink_free(req->qosKey1);
     dslink_free(req->qosKey2);
     dslink_free(req);
+
+    log_debug("broker_free_sub_requester: Subscription was removed.\n");
 }
 
 void broker_clear_messsage_ids(SubRequester *subReq)
@@ -212,6 +220,7 @@ void clear_qos_queue(SubRequester *subReq, uint8_t serialize) {
 }
 
 void broker_update_sub_req_qos(SubRequester *subReq) {
+    log_debug("broker_update_sub_req_qos: Updating QOS level of subscription.\n");
     if (subReq->reqNode->link) {
 
         json_t *top = json_object();
@@ -228,6 +237,7 @@ void broker_update_sub_req_qos(SubRequester *subReq) {
         }
         json_object_set_nocheck(newResp, "updates", subReq->qosQueue);
 
+        log_debug("broker_update_sub_req_qos: Sending update QOS levels.\n");
         broker_ws_send_obj(subReq->reqNode->link, top);
 
         json_decref(top);
@@ -245,12 +255,14 @@ void cleanup_queued_message(void* message) {
 uint32_t sendQueuedMessages(SubRequester *subReq) {
     uint32_t result = 0;
 
+    log_debug("sendQueuedMessages: Sending queued messages to requesters.\n");
     if(subReq->reqNode->link &&
        subReq->reqSid != 0xFFFFFFFF &&
        rb_count(subReq->messageQueue)) {
         while (subReq->messageOutputQueueCount < broker_max_ws_send_queue_size) {
             QueuedMessage* m = rb_at(subReq->messageQueue, subReq->messageOutputQueueCount);
             if(!m) {
+                log_debug("sendQueuedMessages: Queue is now empty\n");
                 break;
             }
             if(m->msg_id > 0) {
@@ -258,9 +270,12 @@ uint32_t sendQueuedMessages(SubRequester *subReq) {
                 break;
             }
 
+            log_debug("sendQueuedMessages: Sending message\n");
           sendMessage(subReq, m->message, &m->msg_id);
           ++result;
         }
+    } else {
+        log_debug("sendQueuedMessages: Could not send queued messages to requesters. Queuesize is %d\n", rb_count(subReq->messageQueue));
     }
 
     return result;
@@ -282,7 +297,7 @@ static int sendMessage(SubRequester *subReq, json_t *varray, uint32_t* msgId) {
     *msgId = broker_ws_send_obj(subReq->reqNode->link, top);
     json_decref(top);
 
-    log_debug("Send message with msgId %d\n", *msgId);
+    log_debug("Send message with msgId %d. Adding pending ack.\n", *msgId);
 
     return addPendingAck(subReq, *msgId);
 }
@@ -325,10 +340,10 @@ int broker_update_sub_req(SubRequester *subReq, json_t *varray) {
     int result = 1;
 
     uint32_t msgId = 0;
-
     if ( subReq->qos <= 2 ) {
         // Add the message to the message queue and than try to send messages from the queue to keep message order 
         // in all cases
+        log_debug("broker_update_sub_req: Adding message %d to send queue. QoS == %d\n", msgId, subReq->qos);
         addToMessageQueue(subReq, varray, msgId);
         if ( sendQueuedMessages(subReq) == 0 ) {
             log_debug("Send queue full: %d\n", subReq->reqSid);
@@ -336,12 +351,15 @@ int broker_update_sub_req(SubRequester *subReq, json_t *varray) {
     } else {
         if (subReq->reqNode->link ) {
             result = sendMessage(subReq, varray, &msgId);
+            log_debug("broker_update_sub_req: Sending message. Result: %d\n", result);
         } else {
+            log_debug("broker_update_sub_req: Adding message %d to send queue. QoS == %d\n", msgId, subReq->qos);
             // add to qos queue
             if (!subReq->qosQueue) {
                 subReq->qosQueue = json_array();
             }
             if (json_array_size(subReq->qosQueue) >= broker_max_qos_queue_size) {
+                log_debug("broker_update_sub_req: Max queue size exceeded\n");
                 // destroy qos queue when exceed max queue size
                 clear_qos_queue(subReq, 1);
                 return result;
