@@ -115,6 +115,7 @@ int broker_ws_send(RemoteDSLink *link, const char *data) {
     }
 
     log_err("broker_ws_send: Error when sending message to %s. Connection is closed.\n", link->name)
+
     return -1;
 }
 

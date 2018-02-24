@@ -54,15 +54,22 @@ void broker_server_client_ready(uv_poll_t *poll,
     if(client) {
         Server *server = client->server;
 
+        RemoteDSLink *link = client->sock_data;
+        const char* origin = (link && link->name) ? link->name : "";
+
+        log_debug( "broker_server_client_ready: server %p, events %d, status %d on %s\n",
+                   (void*)server, events, status, origin ); 
+
         if (server &&
             (events & UV_READABLE)) {
             server->data_ready(client, poll->loop->data);
             if (client->sock->socket_ctx.fd == -1) {
+              log_debug("broker_server_client_ready: closing due to data_ready callback on %s\n", origin );
                 broker_server_free_client(poll);
                 client = NULL;
             }
-        } else if (status == -EBADF && events ==0) {
-            log_err("broker_server_client_ready: connection error");
+        } else if (status == UV_EBADF && events ==0) {
+            log_err("broker_server_client_ready: connection error from %s\n", origin);
             //broker_server_client_fail(poll);
             // The callback closed the connection
             RemoteDSLink *link = client->sock_data;
@@ -72,7 +79,7 @@ void broker_server_client_ready(uv_poll_t *poll,
                 broker_server_free_client(poll);
             }
             client = NULL;
-        }
+        }       
 
         if (client && (events & UV_WRITABLE)) {
             RemoteDSLink *link = client->sock_data;
@@ -87,7 +94,7 @@ void broker_server_client_ready(uv_poll_t *poll,
                     if(stat != 0 ||
                        link->ws->read_enabled == 0 ||
                        link->ws->write_enabled == 0) {
-                        log_err("broker_server_client_ready: Error when writing to socket");
+                        log_err("broker_server_client_ready: Error when writing to socket\n");
                         broker_close_link(link);
                         client = NULL;
                     }
@@ -118,7 +125,7 @@ void broker_ssl_server_client_ready(uv_poll_t *poll,
     } else if (status == -EBADF && events ==0 && client) {
         // broker_server_client_fail(poll);
         // The callback closed the connection
-        log_err("broker_ssl_server_client_ready: connection error");
+        log_err("broker_ssl_server_client_ready: connection error\n");
         RemoteDSLink *link = client->sock_data;
         if (link) {
             broker_close_link(link);
@@ -141,7 +148,7 @@ void broker_ssl_server_client_ready(uv_poll_t *poll,
                 if(stat != 0 ||
                    link->ws->read_enabled == 0 ||
                    link->ws->write_enabled == 0) {
-                    log_err("broker_ssl_server_client_ready: Error when writing to socket");
+                    log_err("broker_ssl_server_client_ready: Error when writing to socket\n");
                     broker_close_link(link);
                     client = NULL;
                 }

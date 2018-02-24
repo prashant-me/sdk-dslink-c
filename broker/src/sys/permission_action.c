@@ -149,7 +149,7 @@ void update_permission_group(RemoteDSLink *link,
                 update_list_attribute((BrokerNode*)child, stream ,"$$group", Group);
             }
 
-            log_debug("update_permission_group: Closing connection");
+            log_debug("update_permission_group: Closing connection\n");
             broker_downstream_nodes_changed(broker);
             if (child->link) {
                 broker_close_link(child->link);
