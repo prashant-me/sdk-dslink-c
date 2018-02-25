@@ -259,7 +259,8 @@ uint32_t sendQueuedMessages(SubRequester *subReq) {
     if(subReq->reqNode->link &&
        subReq->reqSid != 0xFFFFFFFF &&
        rb_count(subReq->messageQueue)) {
-        while (subReq->messageOutputQueueCount < broker_max_ws_send_queue_size) {
+        //while (subReq->messageOutputQueueCount < broker_max_ws_send_queue_size) {
+        while(1) {
             QueuedMessage* m = rb_at(subReq->messageQueue, subReq->messageOutputQueueCount);
             if(!m) {
                 log_debug("sendQueuedMessages: Queue is now empty\n");
@@ -274,8 +275,6 @@ uint32_t sendQueuedMessages(SubRequester *subReq) {
           sendMessage(subReq, m->message, &m->msg_id);
           ++result;
         }
-    } else {
-        log_debug("sendQueuedMessages: Could not send queued messages to requesters. Queuesize is %d\n", rb_count(subReq->messageQueue));
     }
 
     return result;
