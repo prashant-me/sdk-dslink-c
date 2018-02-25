@@ -32,6 +32,12 @@ ssize_t broker_want_read_cb(wslay_event_context_ptr ctx,
         return -1;
     }
 
+    if(link->name) {
+        log_debug("broker_want_read_cb: Reading data from %s\n", link->name);
+    } else {
+        log_debug("broker_want_read_cb: Reading data from link (Name not set)\n");
+    }
+
     ssize_t ret = -1;
     while((ret = dslink_socket_read(link->client->sock, (char *) buf, len)) < 0 && errno == EINTR);
     if (ret == 0) {

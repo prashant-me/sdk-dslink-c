@@ -257,9 +257,11 @@ void dslink_handle_ping(uv_timer_t* handle) {
         gettimeofday(&current_time, NULL);
         long time_diff = current_time.tv_sec - link->lastWriteTime->tv_sec;
         if (time_diff >= 60) {
+            log_debug("dslink_handle_ping: Didn't send any message for %ld seconds.\n", time_diff)
             broker_ws_send_obj(link, json_object());
         }
     } else {
+        log_debug("dslink_handle_ping: Sending ping message: link->lastWriteTime == NULL\n")
         broker_ws_send_obj(link, json_object());
     }
 
@@ -268,7 +270,7 @@ void dslink_handle_ping(uv_timer_t* handle) {
         gettimeofday(&current_time, NULL);
         long time_diff = current_time.tv_sec - link->lastReceiveTime->tv_sec;
         if (time_diff >= 90) {
-            log_debug("Didn't receive ping message for 90 seconds. Disconnecting...\n")
+            log_warn("dslink_handle_ping: Didn't receive any message for %ld seconds. Disconnecting...\n", time_diff)
 
             broker_close_link(link);
         }
