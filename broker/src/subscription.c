@@ -259,8 +259,7 @@ uint32_t sendQueuedMessages(SubRequester *subReq) {
     if(subReq->reqNode->link &&
        subReq->reqSid != 0xFFFFFFFF &&
        rb_count(subReq->messageQueue)) {
-        //while (subReq->messageOutputQueueCount < broker_max_ws_send_queue_size) {
-        while(1) {
+        while (subReq->messageOutputQueueCount < broker_max_ws_send_queue_size) {
             QueuedMessage* m = rb_at(subReq->messageQueue, subReq->messageOutputQueueCount);
             if(!m) {
                 log_debug("sendQueuedMessages: Queue is now empty\n");
