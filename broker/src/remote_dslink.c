@@ -23,7 +23,9 @@ int broker_remote_dslink_init(RemoteDSLink *link) {
     permission_groups_init(&link->permission_groups);
 
     // TODO: error handling
+    vector_init(&link->_send_queue, 10, sizeof(json_t*));
     uv_prepare_init(uv_default_loop(), &link->_process_send_queue);
+    link->_process_send_queue.data = link;
     uv_prepare_start(&link->_process_send_queue, process_send_events);
     return 0;
 }

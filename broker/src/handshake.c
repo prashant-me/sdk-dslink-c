@@ -257,10 +257,14 @@ void dslink_handle_ping(uv_timer_t* handle) {
         gettimeofday(&current_time, NULL);
         long time_diff = current_time.tv_sec - link->lastWriteTime->tv_sec;
         if (time_diff >= 60) {
-            broker_ws_send_obj(link, json_object());
+            json_t* top = json_object();
+            broker_ws_send_obj(link, top);
+            json_decref(top);
         }
     } else {
-        broker_ws_send_obj(link, json_object());
+        json_t* top = json_object();
+        broker_ws_send_obj(link, top);
+        json_decref(top);
     }
 
     if (link->lastReceiveTime) {

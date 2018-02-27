@@ -111,7 +111,7 @@ void inspect_subscriptions(RemoteDSLink *link,
   json_object_set_new_nocheck(resp, "stream", json_string("closed"));
 
   broker_ws_send_obj(link, top);
-  json_delete(top);
+  json_decref(top);
 }
 
 static int init_inspect_subscriptions(BrokerNode *sysNode)

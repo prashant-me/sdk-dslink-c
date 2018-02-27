@@ -138,7 +138,7 @@ void set_log_level(RemoteDSLink *link,
   json_object_set_new_nocheck(resp, "stream", json_string("closed"));
   json_object_set_nocheck(resp, "rid", rid);
   broker_ws_send_obj(link, top);
-  json_delete(top);
+  json_decref(top);
 }
 
 int init_set_log_level(BrokerNode *sysNode)

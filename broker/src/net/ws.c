@@ -28,7 +28,7 @@ static uint32_t broker_ws_send_obj_internal(RemoteDSLink *link, json_t *obj);
 void process_send_events(uv_prepare_t* handle)
 {
     RemoteDSLink* link = handle->data;
-    while(vector_count(&link->_send_queue)) {
+    while(link && vector_count(&link->_send_queue)) {
         log_info("Processing events (%d)...\n", vector_count(&link->_send_queue));
         // TODO: make config parameter for merge count
         json_t* top = merge_queue_messages(&link->_send_queue, 100);
@@ -107,6 +107,7 @@ uint32_t broker_ws_send_obj(RemoteDSLink *link, json_t *obj)
 
 static uint32_t broker_ws_send_obj_internal(RemoteDSLink *link, json_t *obj) {
     char *data = json_dumps(obj, JSON_PRESERVE_ORDER | JSON_COMPACT);
+    // TODO: WTF?
     json_object_del(obj, "msg");
 
     if (!data) {

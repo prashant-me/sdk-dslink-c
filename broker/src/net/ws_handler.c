@@ -119,6 +119,7 @@ void broker_on_ws_data(wslay_event_context_ptr ctx,
             json_error_t err;
             json_t *data = json_loadb("{}", 2, 0, &err);
             broker_ws_send_obj(link, data);
+            json_decref(data);
             return;
         }
 
