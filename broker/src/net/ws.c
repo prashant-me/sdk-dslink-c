@@ -29,7 +29,6 @@ void process_send_events(uv_prepare_t* handle)
 {
     RemoteDSLink* link = handle->data;
     while(link && vector_count(&link->_send_queue)) {
-        log_info("Processing events (%d)...\n", vector_count(&link->_send_queue));
         // TODO: make config parameter for merge count
         json_t* top = merge_queue_messages(&link->_send_queue, 100);
         broker_ws_send_obj_internal(link, top);
@@ -111,6 +110,7 @@ static uint32_t broker_ws_send_obj_internal(RemoteDSLink *link, json_t *obj) {
     json_object_del(obj, "msg");
 
     if (!data) {
+        log_err("Could not allocate memory for message sending!");
         return DSLINK_ALLOC_ERR;
     }
     int sentBytes = broker_ws_send(link, data);

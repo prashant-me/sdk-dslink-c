@@ -9,12 +9,19 @@ json_t* merge_queue_messages(Vector* send_queue, uint32_t count)
     json_t *resps = NULL;
 
     uint32_t processed = 0;
+    uint32_t msgId = 0;
     dslink_vector_foreach(send_queue) {
         if(processed == count) {
             break;
         }
 
         json_t* obj = (json_t*)(*(void**)data);
+
+        json_t* msg = json_object_get(obj, "msg");
+        if(msg) {
+            uint32_t tmp = (uint32_t)json_integer_value(msg);
+            msgId = tmp > msgId ? tmp : msgId;
+        }
 
         json_t* req = json_object_get(obj, "requests");
         if(!reqs) {
@@ -45,6 +52,10 @@ json_t* merge_queue_messages(Vector* send_queue, uint32_t count)
     }
     dslink_vector_foreach_end();
     vector_erase_range(send_queue, 0, processed);
+
+    if(msgId > 0) {
+        json_object_set_new_nocheck(top, "msg", json_integer(msgId));
+    }
 
     return top;
 }
