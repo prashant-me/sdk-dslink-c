@@ -94,7 +94,10 @@ void reconnect_if_error_occured(int stat, UpstreamPoll* upstreamPoll) {
         return;
     }
 
-    if(stat != 0 || (upstreamPoll->remoteDSLink->pendingClose == 1)) {
+    if(stat != 0 ||
+       upstreamPoll->remoteDSLink->ws->read_enabled == 0 ||
+       upstreamPoll->remoteDSLink->ws->write_enabled == 0 ||
+       (upstreamPoll->remoteDSLink->pendingClose == 1)) {
         upstream_reconnect(upstreamPoll);
     }
 }

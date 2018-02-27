@@ -145,6 +145,7 @@ int dslink_ws_send_obj_internal(wslay_event_context_ptr ctx, json_t *obj) {
 
     json_t *jsonMsg = json_integer(msg);
     json_object_set(obj, "msg", jsonMsg);
+    json_decref(jsonMsg);
 
     char *data = json_dumps(obj, JSON_PRESERVE_ORDER);
     if (!data) {
@@ -155,7 +156,6 @@ int dslink_ws_send_obj_internal(wslay_event_context_ptr ctx, json_t *obj) {
     dslink_free(data);
 
     json_object_del(obj, "msg");
-    json_delete(jsonMsg);
 
     return 0;
 }

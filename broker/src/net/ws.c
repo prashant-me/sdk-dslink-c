@@ -90,9 +90,9 @@ uint32_t broker_ws_send_obj(RemoteDSLink *link, json_t *obj)
 {
     uint32_t id = 0;
     if(json_object_size(obj) > 0) {
-        uint32_t id = ++link->msgId;
+        id = ++link->msgId;
         if(link->msgId == 2147483647) {
-            link->msgId = 0;
+            link->msgId = 1;
         }
         json_object_set_new_nocheck(obj, "msg", json_integer(id));
     }

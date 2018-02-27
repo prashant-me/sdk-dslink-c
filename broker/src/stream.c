@@ -64,6 +64,9 @@ BrokerListStream *broker_stream_list_init(void *node) {
     if (!stream) {
         return NULL;
     }
+
+    memset(stream, 0, sizeof(BrokerListStream));
+
     stream->type = LIST_STREAM;
     stream->req_close_cb = broker_list_req_closed;
     if (dslink_map_init(&stream->requester_links, broker_map_dslink_cmp,
@@ -88,6 +91,8 @@ BrokerSubStream *broker_stream_sub_init() {
         return NULL;
     }
 
+    memset(stream, 0, sizeof(BrokerSubStream));
+
     stream->type = SUBSCRIPTION_STREAM;
 
     if (dslink_map_init(&stream->reqSubs, broker_map_node_cmp,
@@ -104,6 +109,8 @@ BrokerInvokeStream *broker_stream_invoke_init() {
     if (!stream) {
         return NULL;
     }
+
+    memset(stream, 0, sizeof(BrokerInvokeStream));
 
     stream->type = INVOCATION_STREAM;
     return stream;
@@ -140,6 +147,7 @@ void broker_stream_free(BrokerStream *stream) {
             dslink_map_remove(&bis->responder->responder_streams, &bis->responder_rid);
         }
         dslink_free(stream);
+        stream = NULL;
     } else if (stream->type == SUBSCRIPTION_STREAM) {
         BrokerSubStream *bss = (BrokerSubStream *) stream;
         if (bss->respNode->type == DOWNSTREAM_NODE) {
