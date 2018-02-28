@@ -12,6 +12,7 @@ extern "C" {
 void process_send_events(uv_prepare_t* handle);
 void broker_ws_send_init(Socket *sock, const char *accept);
 uint32_t broker_ws_send_obj(RemoteDSLink *link, json_t *obj);
+uint32_t broker_ws_send_initial_obj(RemoteDSLink *link, json_t *obj);
 uint32_t broker_ws_send_obj_link_id(struct Broker* broker, const char *link_name, int upstream, json_t *obj);
 
 int broker_ws_generate_accept_key(const char *buf, size_t bufLen,

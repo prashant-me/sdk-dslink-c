@@ -5,6 +5,7 @@
 #include <broker/utils.h>
 #include <broker/stream.h>
 #include <broker/subscription.h>
+#include <broker/broker.h>
 
 #include <broker/net/ws.h>
 
@@ -24,9 +25,8 @@ int broker_remote_dslink_init(RemoteDSLink *link) {
 
     // TODO: error handling
     vector_init(&link->_send_queue, 10, sizeof(json_t*));
-    uv_prepare_init(uv_default_loop(), &link->_process_send_queue);
+    uv_prepare_init(mainLoop, &link->_process_send_queue);
     link->_process_send_queue.data = link;
-    uv_prepare_start(&link->_process_send_queue, process_send_events);
     return 0;
 }
 

@@ -354,8 +354,6 @@ void upstream_connect_conn(UpstreamPoll *upstreamPoll) {
     link->broker = mainLoop->data;
     link->name = dslink_strdup(upstreamPoll->name);
     upstreamPoll->remoteDSLink = link;
-    link->_process_send_queue.data = link;
-    vector_init(&link->_send_queue, 10, sizeof(json_t*));
 
     DSLink *clientDslink = dslink_malloc(sizeof(DSLink));
     bzero(clientDslink, sizeof(DSLink));

@@ -89,6 +89,7 @@ json_t* merge_queue_messages(Vector* send_queue, uint32_t count)
 
     uint32_t processed = 0;
     uint32_t msgId = 0;
+    uint32_t ackId = 0;
     dslink_vector_foreach(send_queue) {
         if(processed == count) {
             break;
@@ -96,10 +97,11 @@ json_t* merge_queue_messages(Vector* send_queue, uint32_t count)
 
         json_t* obj = (json_t*)(*(void**)data);
 
-        if (dslink_log_lvl >= LOG_LVL_INFO) {
+        /*
+        if (dslink_log_lvl >= LOG_LVL_DEBUG) {
             char* s = dumpMessage(obj);
-            log_info("Message before: \n%s\n", s);
-        }
+            log_debug("Message before: \n%s\n", s);
+        }*/
 
         json_t* msg = json_object_get(obj, "msg");
         if(msg) {
@@ -107,16 +109,21 @@ json_t* merge_queue_messages(Vector* send_queue, uint32_t count)
             msgId = tmp > msgId ? tmp : msgId;
         }
 
+        json_t* ack = json_object_get(obj, "ack");
+        if(ack) {
+            uint32_t tmp = (uint32_t)json_integer_value(ack);
+            ackId = tmp > ackId ? tmp : ackId;
+        }
+
         json_t* req = json_object_get(obj, "requests");
         if(req) {
             if(!reqs) {
-                reqs = req;
-                json_object_set(top, "requests", json_incref(reqs));
+                reqs = json_incref(req);
             } else {
                 size_t index = 0;
                 json_t *value = NULL;
                 json_array_foreach(req, index, value) {
-                    json_array_append(reqs, json_incref(value));
+                    json_array_append(reqs, value);
                 }
             }
         }
@@ -124,13 +131,12 @@ json_t* merge_queue_messages(Vector* send_queue, uint32_t count)
         json_t* resp = json_object_get(obj, "responses");
         if(resp) {
             if(!resps) {
-                resps = resp;
-                json_object_set(top, "responses", json_incref(resps));
+                resps = json_incref(resp);
             } else {
                 size_t index = 0;
                 json_t *value = NULL;
                 json_array_foreach(resp, index, value) {
-                    json_array_append(resps, json_incref(value));
+                    json_array_append(resps, value);
                 }
             }
         }
@@ -144,11 +150,21 @@ json_t* merge_queue_messages(Vector* send_queue, uint32_t count)
     if(msgId > 0) {
         json_object_set_new_nocheck(top, "msg", json_integer(msgId));
     }
-
-    if (dslink_log_lvl >= LOG_LVL_INFO) {
-        char* s = dumpMessage(top);
-        log_info("Merged message: \n%s\n", s);
+    if(ackId > 0) {
+        json_object_set_new_nocheck(top, "ack", json_integer(ackId));
     }
+    if(reqs) {
+        json_object_set_new_nocheck(top, "requests", reqs);
+    }
+    if(resps) {
+        json_object_set_new_nocheck(top, "responses", resps);
+    }
+
+    /*
+    if (dslink_log_lvl >= LOG_LVL_DEBUG) {
+        char* s = dumpMessage(top);
+        log_debug("Merged message: \n%s\n", s);
+    }*/
 
     return top;
 }

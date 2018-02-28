@@ -256,7 +256,7 @@ void dslink_handle_ping(uv_timer_t* handle) {
         struct timeval current_time;
         gettimeofday(&current_time, NULL);
         long time_diff = current_time.tv_sec - link->lastWriteTime->tv_sec;
-        if (time_diff >= 60) {
+        if (time_diff >= 30) {
             json_t* top = json_object();
             broker_ws_send_obj(link, top);
             json_decref(top);
@@ -356,7 +356,6 @@ int broker_handshake_handle_ws(Broker *broker,
         permission_groups_load(&link->permission_groups, dsId, NULL);
     }
 
-
     link->client = client;
     link->dsId = oldDsId;
     link->node = node;
@@ -380,6 +379,10 @@ int broker_handshake_handle_ws(Broker *broker,
     uv_timer_init(link->client->poll->loop, ping_timer);
     uv_timer_start(ping_timer, dslink_handle_ping, 1000, 10000);
     link->pingTimerHandle = ping_timer;
+
+    int res = uv_prepare_start(&link->_process_send_queue, process_send_events);
+    log_info("Res: %d\n", res);
+    log_info("Active: %d\n", uv_is_active((uv_handle_t*)&link->_process_send_queue));
 
     // set the ->link and update all existing stream
     broker_dslink_connect(node, link);
