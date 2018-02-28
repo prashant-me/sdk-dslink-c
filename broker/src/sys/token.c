@@ -58,12 +58,6 @@ void clear_managed_link(const char * name){
     dslink_map_init(map, dslink_map_str_cmp,
                     dslink_map_str_key_len_cal, dslink_map_hash_key);
 
-    json_t *top = json_object();
-    json_t *resps = json_array();
-    json_object_set_new_nocheck(top, "responses", resps);
-    json_t *resp = json_object();
-    json_array_append_new(resps, resp);
-    json_object_set_new_nocheck(resp, "stream", json_string_nocheck("open"));
     json_t *updates = json_array();
 
     List nodeToDelete;
@@ -101,13 +95,21 @@ void clear_managed_link(const char * name){
         }
     }
     if (foundlink) {
-        json_object_set_new_nocheck(resp, "updates", updates);
-
         if (broker->downstream->list_stream) {
             dslink_map_foreach(&broker->downstream->list_stream->requester_links) {
+                json_t *top = json_object();
+                json_t *resps = json_array();
+                json_object_set_new_nocheck(top, "responses", resps);
+                json_t *resp = json_object();
+                json_array_append_new(resps, resp);
+                json_object_set_new_nocheck(resp, "stream", json_string_nocheck("open"));
+                json_object_set(resp, "updates", updates);
+
                 uint32_t *rid = entry->value->data;
                 json_object_set_new_nocheck(resp, "rid", json_integer(*rid));
                 broker_ws_send_obj(entry->key->data, top);
+
+                json_decref(top);
             }
         }
         dslink_map_clear(broker->downstream->children);
@@ -128,9 +130,10 @@ void clear_managed_link(const char * name){
         dslink_map_free(map);
     }
 
+    json_decref(updates);
     dslink_list_free_all_nodes(&nodeToDelete);
-    json_decref(top);
 }
+
 static
 void delete_token_invoke(RemoteDSLink *link,
                          BrokerNode *node,
@@ -267,6 +270,7 @@ void add_token_invoke(RemoteDSLink *link,
     log_info("Token added `%s`\n", tokenName);
     save_token_node(tokenNode);
 
+    json_t *rid = json_object_get(req, "rid");
     if (link && req) {
         json_t *top = json_object();
         json_t *resps = json_array();
@@ -274,7 +278,6 @@ void add_token_invoke(RemoteDSLink *link,
         json_t *resp = json_object();
         json_array_append_new(resps, resp);
 
-        json_t *rid = json_object_get(req, "rid");
         json_object_set_nocheck(resp, "rid", rid);
         json_object_set_new_nocheck(resp, "stream",
                                     json_string_nocheck("closed"));

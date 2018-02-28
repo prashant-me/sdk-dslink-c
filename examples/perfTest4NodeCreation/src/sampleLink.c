@@ -172,7 +172,7 @@ static void SendDefaultResponse(json_t *rid, json_t *updates)
         resps = json_array();
         if( resps == NULL )
             break;
-        json_object_set_new_nocheck(top, "responses", json_incref(resps));
+        json_object_set_new_nocheck(top, "responses", resps);
 
         resp = json_object();
         if( NULL == resp )
@@ -181,13 +181,13 @@ static void SendDefaultResponse(json_t *rid, json_t *updates)
         _updates = json_array();
         if( NULL == _updates)
             break;
-        json_array_append_new(_updates, json_incref(updates));
+        json_array_append(_updates, updates);
 
         json_object_set_new_nocheck(resp, "updates", _updates);
         _updates = NULL;
 
         json_object_set_new_nocheck(resp, "stream", json_string("closed"));
-        json_object_set_new_nocheck(resp, "rid", json_incref(rid));
+        json_object_set_nocheck(resp, "rid", rid);
         
         json_array_append_new( resps, resp );
         resp = NULL;

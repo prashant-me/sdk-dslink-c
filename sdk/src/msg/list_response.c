@@ -120,7 +120,7 @@ int dslink_response_list(DSLink *link, json_t *req, DSNode *node) {
     }
 
     json_t *jsonRid = json_object_get(req, "rid");
-    json_object_set_nocheck(resp, "rid", jsonRid);
+    json_object_set(resp, "rid", jsonRid);
     json_object_set_new_nocheck(resp, "stream", json_string_nocheck("open"));
 
     {

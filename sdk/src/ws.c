@@ -360,15 +360,13 @@ void recv_frame_cb(wslay_event_context_ptr ctx,
         }
     }
 
-    json_t *msg = json_incref(json_object_get(obj, "msg"));
+    json_t *msg = json_object_get(obj, "msg");
 
     if ((resps || reqs) && msg) {
         json_t *top = json_object();
-        json_object_set_new(top, "ack", msg);
+        json_object_set(top, "ack", msg);
         dslink_ws_send_obj(link, top);
         json_decref(top);
-    } else {
-        json_decref(msg);
     }
 
     json_decref(obj);

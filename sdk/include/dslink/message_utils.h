@@ -9,6 +9,8 @@ extern "C" {
 
 #include "dslink/col/vector.h"
 
+char* dumpMessage(json_t* message);
+
 json_t* merge_queue_messages(Vector* send_queue, uint32_t count);
 
 #ifdef __cplusplus

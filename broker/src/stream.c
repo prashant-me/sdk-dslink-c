@@ -223,7 +223,6 @@ json_t *broker_stream_list_get_cache(BrokerListStream *stream) {
     const char *key;
     json_t *value;
 
-
     json_t *valueBase = json_object_get(stream->updates_cache, "$base");
     if (valueBase != NULL) {
         add_to_update(updates, "$base", valueBase);

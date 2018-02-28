@@ -151,7 +151,6 @@ void update_list_attribute(BrokerNode *node,
         json_array_append_new(updates, updateRow);
 
         json_object_set_nocheck(stream->updates_cache, name, value);
-
     } else {
         json_t *removeMap = json_object();
         json_object_set_new_nocheck(removeMap, "name", json_string(name));
@@ -160,25 +159,25 @@ void update_list_attribute(BrokerNode *node,
         json_object_del(stream->updates_cache, name);
     }
 
-
-    json_t *top = json_object();
-    json_t *resps = json_array();
-    json_object_set_new_nocheck(top, "responses", resps);
-    json_t *resp = json_object();
-    json_array_append_new(resps, resp);
-
-    json_object_set_new_nocheck(resp, "stream", json_string("open"));
-    json_object_set_new_nocheck(resp, "updates", updates);
-
     dslink_map_foreach(&stream->requester_links) {
-        json_object_del(resp, "rid");
+        json_t *top = json_object();
+        json_t *resps = json_array();
+        json_object_set_new_nocheck(top, "responses", resps);
+        json_t *resp = json_object();
+        json_array_append_new(resps, resp);
+
+        json_object_set_new_nocheck(resp, "stream", json_string("open"));
+        json_object_set(resp, "updates", updates);
+
         json_t *newRid = json_integer(*((uint32_t *) entry->value->data));
         json_object_set_new_nocheck(resp, "rid", newRid);
 
         RemoteDSLink *client = entry->key->data;
         broker_ws_send_obj(client, top);
+
+        json_decref(top);
     }
-    json_decref(top);
+    json_decref(updates);
 }
 
 void update_list_child(BrokerNode *node,
@@ -205,7 +204,7 @@ void update_list_child(BrokerNode *node,
         json_t *updateRow = json_array();
 
         json_array_append_new(updateRow, json_string_nocheck(name));
-        json_array_append_new(updateRow, obj);
+        json_array_append(updateRow, obj);
         json_array_append_new(updates, updateRow);
 
         json_object_set_nocheck(stream->updates_cache, name, obj);
@@ -218,25 +217,25 @@ void update_list_child(BrokerNode *node,
         json_object_del(stream->updates_cache, name);
     }
 
-
-    json_t *top = json_object();
-    json_t *resps = json_array();
-    json_object_set_new_nocheck(top, "responses", resps);
-    json_t *resp = json_object();
-    json_array_append_new(resps, resp);
-
-    json_object_set_new_nocheck(resp, "stream", json_string_nocheck("open"));
-    json_object_set_new_nocheck(resp, "updates", updates);
-
     dslink_map_foreach(&stream->requester_links) {
-        json_object_del(resp, "rid");
+        json_t *top = json_object();
+        json_t *resps = json_array();
+        json_object_set_new_nocheck(top, "responses", resps);
+        json_t *resp = json_object();
+        json_array_append_new(resps, resp);
+
+        json_object_set_new_nocheck(resp, "stream", json_string_nocheck("open"));
+        json_object_set(resp, "updates", updates);
+
         json_t *newRid = json_integer(*((uint32_t *) entry->value->data));
         json_object_set_new_nocheck(resp, "rid", newRid);
 
         RemoteDSLink *client = entry->key->data;
         broker_ws_send_obj(client, top);
+
+        json_decref(top);
     }
-    json_decref(top);
+    json_decref(updates);
 }
 
 static

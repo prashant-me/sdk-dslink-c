@@ -98,10 +98,10 @@ uint32_t broker_ws_send_obj(RemoteDSLink *link, json_t *obj)
 
     if(vector_append(&link->_send_queue, &obj) >= 0) {
         json_incref(obj);
-        return 0;
+        return id;
     }
 
-    return id;
+    return 0;
 }
 
 static uint32_t broker_ws_send_obj_internal(RemoteDSLink *link, json_t *obj) {

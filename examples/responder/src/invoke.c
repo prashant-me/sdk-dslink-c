@@ -206,6 +206,7 @@ void do_stream_number_tick(uv_timer_t *timer) {
 static void invoke_onclose_stream_numbers(uv_handle_t *timer) {
     NumberStreamHolder *holder = timer->data;
 
+    json_decref(holder->rid);
     dslink_free(holder->number);
     dslink_free(holder);
     dslink_free(timer);

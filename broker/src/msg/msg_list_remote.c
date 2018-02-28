@@ -85,25 +85,25 @@ static
 void broker_list_dslink_send_cache(BrokerListStream *stream){
     json_t *cached_updates = broker_stream_list_get_cache(stream);
 
-    json_t *top = json_object();
-    json_t *resps = json_array();
-    json_object_set_new_nocheck(top, "responses", resps);
-    json_t *resp = json_object();
-    json_array_append_new(resps, resp);
-
-    json_object_set_new_nocheck(resp, "stream", json_string_nocheck("open"));
-    json_object_set_new_nocheck(resp, "updates", cached_updates);
-
     dslink_map_foreach(&stream->requester_links) {
-        json_object_del(resp, "rid");
+        json_t *top = json_object();
+        json_t *resps = json_array();
+        json_object_set_new_nocheck(top, "responses", resps);
+        json_t *resp = json_object();
+        json_array_append_new(resps, resp);
+
+        json_object_set(resp, "updates", cached_updates);
+        json_object_set_new_nocheck(resp, "stream", json_string_nocheck("open"));
+
         json_t *newRid = json_integer(*((uint32_t *) entry->value->data));
         json_object_set_new_nocheck(resp, "rid", newRid);
 
         RemoteDSLink *client = entry->key->data;
         broker_ws_send_obj(client, top);
-    }
 
-    json_decref(top);
+        json_decref(top);
+    }
+    json_decref(cached_updates);
 }
 
 void broker_list_dslink_response(RemoteDSLink *link, json_t *resp, BrokerListStream *stream) {
@@ -179,19 +179,20 @@ void broker_list_dslink_response(RemoteDSLink *link, json_t *resp, BrokerListStr
         }
     }
     if (stream->cache_sent) {
-        json_t *top = json_object();
-        json_t *resps = json_array();
-        json_object_set_new_nocheck(top, "responses", resps);
-        json_array_append(resps, resp);
         dslink_map_foreach(&stream->requester_links) {
-            json_object_del(resp, "rid");
+            json_t *top = json_object();
+            json_t *resps = json_array();
+            json_object_set_new_nocheck(top, "responses", resps);
+            json_array_append(resps, resp);
+
             json_t *newRid = json_integer(*((uint32_t *) entry->value->data));
             json_object_set_new_nocheck(resp, "rid", newRid);
 
             RemoteDSLink *client = entry->key->data;
             broker_ws_send_obj(client, top);
+
+            json_decref(top);
         }
-        json_decref(top);
     } else {
         broker_list_dslink_send_cache(stream);
     }

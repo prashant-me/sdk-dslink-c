@@ -3,6 +3,8 @@
 #include "broker/broker.h"
 #include "broker/utils.h"
 #include "broker/sys/clear_conns.h"
+#define LOG_TAG "broker"
+#include <dslink/log.h>
 
 static
 void clear_conns(RemoteDSLink *link,
@@ -15,12 +17,6 @@ void clear_conns(RemoteDSLink *link,
     dslink_map_init(map, dslink_map_str_cmp,
                     dslink_map_str_key_len_cal, dslink_map_hash_key);
 
-    json_t *top = json_object();
-    json_t *resps = json_array();
-    json_object_set_new_nocheck(top, "responses", resps);
-    json_t *resp = json_object();
-    json_array_append_new(resps, resp);
-    json_object_set_new_nocheck(resp, "stream", json_string_nocheck("open"));
     json_t *updates = json_array();
 
     List nodeToDelete;
@@ -50,17 +46,25 @@ void clear_conns(RemoteDSLink *link,
         }
     }
 
-    json_object_set_new_nocheck(resp, "updates", updates);
-
     if (link->broker->downstream->list_stream) {
         dslink_map_foreach(&link->broker->downstream->list_stream->requester_links) {
+            json_t *top = json_object();
+            json_t *resps = json_array();
+            json_object_set_new_nocheck(top, "responses", resps);
+            json_t *resp = json_object();
+            json_array_append_new(resps, resp);
+            json_object_set_new_nocheck(resp, "stream", json_string_nocheck("open"));
+            json_object_set(resp, "updates", updates);
+            
             uint32_t *rid = entry->value->data;
             json_object_set_new_nocheck(resp, "rid", json_integer(*rid));
+
             broker_ws_send_obj(entry->key->data, top);
+
+            json_decref(top);
         }
     }
-
-    json_decref(top);
+    json_decref(updates);
 
     dslink_map_clear(link->broker->downstream->children);
     Map* omap = link->broker->downstream->children;

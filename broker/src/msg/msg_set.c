@@ -103,7 +103,6 @@ int broker_msg_handle_set(RemoteDSLink *link, json_t *req) {
     }
 
     if (node && node->type == DOWNSTREAM_NODE) {
-        uint32_t reqRid = (uint32_t) json_integer_value(rid);
         if (out == NULL) {
             out = "/";
         }
@@ -112,7 +111,7 @@ int broker_msg_handle_set(RemoteDSLink *link, json_t *req) {
         json_t *top = json_object();
         json_t *reqs = json_array();
         json_object_set_new_nocheck(top, "requests", reqs);
-        json_object_set_new_nocheck(req, "rid", json_integer(reqRid));
+        json_object_set(req, "rid", rid);
         json_object_set_new_nocheck(req, "path", json_string_nocheck(out));
         json_array_append(reqs, req);
 

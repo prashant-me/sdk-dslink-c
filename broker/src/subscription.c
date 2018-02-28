@@ -224,6 +224,8 @@ void broker_update_sub_req_qos(SubRequester *subReq) {
         size_t idx;
         json_t *varray;
         json_array_foreach(subReq->qosQueue, idx, varray) {
+            // TODO lfuerste: This seems to be off. Shouldn't the idx be used
+            //                instead of 0?
             json_array_set_new(varray, 0, json_integer(subReq->reqSid));
         }
         json_object_set_nocheck(newResp, "updates", subReq->qosQueue);
