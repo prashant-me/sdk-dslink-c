@@ -188,7 +188,6 @@ void upstream_handshake_handle_ws(UpstreamPoll *upstreamPoll) {
     uv_poll_start(upstreamPoll->wsPoll, UV_READABLE, upstream_io_handler);
 
     // TODO: error handling
-    uv_prepare_init(mainLoop, &link->_process_send_queue);
     uv_prepare_start(&link->_process_send_queue, process_send_events);
 
     init_upstream_node(mainLoop->data, upstreamPoll);

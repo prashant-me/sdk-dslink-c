@@ -9,6 +9,7 @@
 #include <wslay_event.h>
 
 #include "broker/broker.h"
+#include "broker/config.h"
 #include "broker/remote_dslink.h"
 #include "broker/net/ws.h"
 #include "broker/net/server.h"
@@ -30,7 +31,7 @@ void process_send_events(uv_prepare_t* handle)
     RemoteDSLink* link = handle->data;
     while(link && vector_count(&link->_send_queue)) {
         // TODO: make config parameter for merge count
-        json_t* top = merge_queue_messages(&link->_send_queue, 100);
+        json_t* top = merge_queue_messages(&link->_send_queue, broker_message_merge_count);
         broker_ws_send_obj_internal(link, top);
         json_decref(top);
     }
