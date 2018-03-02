@@ -6,6 +6,7 @@
 #include <broker/stream.h>
 #include <broker/subscription.h>
 #include <broker/broker.h>
+#include <broker/config.h>
 
 #include <broker/net/ws.h>
 
@@ -23,8 +24,7 @@ int broker_remote_dslink_init(RemoteDSLink *link) {
     }
     permission_groups_init(&link->permission_groups);
 
-    // TODO: error handling
-    vector_init(&link->_send_queue, 10, sizeof(json_t*));
+    vector_init(&link->_send_queue, broker_message_merge_count, sizeof(json_t*));
     uv_prepare_init(mainLoop, &link->_process_send_queue);
     link->_process_send_queue.data = link;
     return 0;
@@ -32,6 +32,15 @@ int broker_remote_dslink_init(RemoteDSLink *link) {
 
 void broker_remote_dslink_free(RemoteDSLink *link) {
     uv_prepare_stop(&link->_process_send_queue);
+    uv_close((uv_handle_t *) &link->_process_send_queue, NULL);
+
+    dslink_vector_foreach(&link->_send_queue) {
+        json_t* obj = (json_t*)(*(void**)data);
+        json_decref(obj);
+    }
+    dslink_vector_foreach_end();
+    vector_erase_range(&link->_send_queue, 0, vector_count(&link->_send_queue));
+    vector_free(&link->_send_queue);
     
     if (link->auth) {
         mbedtls_ecdh_free(&link->auth->tempKey);

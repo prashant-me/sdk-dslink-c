@@ -28,8 +28,6 @@ void upstream_free_dslink(DSLink *link) {
 }
 
 void upstream_clear_poll(UpstreamPoll *upstreamPoll) {
-    uv_prepare_stop(&upstreamPoll->remoteDSLink->_process_send_queue);
-
     if (upstreamPoll->status == UPSTREAM_CONN || upstreamPoll->status == UPSTREAM_CONN_CHECK) {
         if (upstreamPoll->connPoll) {
             uv_poll_stop(upstreamPoll->connPoll);
@@ -187,7 +185,7 @@ void upstream_handshake_handle_ws(UpstreamPoll *upstreamPoll) {
     client->poll_cb = upstream_io_handler;
     uv_poll_start(upstreamPoll->wsPoll, UV_READABLE, upstream_io_handler);
 
-    // TODO: error handling
+    uv_prepare_init(mainLoop, &link->_process_send_queue);
     uv_prepare_start(&link->_process_send_queue, process_send_events);
 
     init_upstream_node(mainLoop->data, upstreamPoll);

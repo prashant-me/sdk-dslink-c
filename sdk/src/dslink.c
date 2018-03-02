@@ -462,6 +462,15 @@ int dslink_init_do(DSLink *link, DSLinkCallbacks *cbs) {
     }
 
     uv_prepare_stop(&link->_process_send_queue);
+    uv_close((uv_handle_t *) &link->_process_send_queue, NULL);
+
+    dslink_vector_foreach(&link->_send_queue) {
+        json_t* obj = (json_t*)(*(void**)data);
+        json_decref(obj);
+    }
+    dslink_vector_foreach_end();
+    vector_erase_range(&link->_send_queue, 0, vector_count(&link->_send_queue));
+    vector_free(&link->_send_queue);
 
     exit:
     if (link->is_responder) {
@@ -618,11 +627,6 @@ int dslink_init(int argc, char **argv,
     uv_loop_init(&link->loop);
     link->loop.data = link;
 
-    if(uv_prepare_init(&link->loop, &link->_process_send_queue)) {
-        log_warn("Prepare handle init error\n");
-    }
-    vector_init(&link->_send_queue, 10, sizeof(json_t*));
-
     //thread-safe API async handle set
     if(uv_async_init(&link->loop, &link->async_get, dslink_async_get_node_value)) {
         log_warn("Async handle init error\n");
@@ -643,6 +647,11 @@ int dslink_init(int argc, char **argv,
 
     int ret = 0;
     while (1) {
+        if(uv_prepare_init(&link->loop, &link->_process_send_queue)) {
+            log_warn("Prepare handle init error\n");
+        }
+        vector_init(&link->_send_queue, link->config.messageMergeCount, sizeof(json_t*));
+
         ret = dslink_init_do(link, cbs);
         if (ret != 2) {
             log_info("%i\n", ret);
