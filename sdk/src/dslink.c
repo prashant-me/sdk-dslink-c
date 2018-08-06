@@ -6,12 +6,13 @@
 #include <wslay/wslay.h>
 #include <jansson.h>
 
+#include "dslink/dslink.h"
 #include "dslink/handshake.h"
 #include "dslink/utils.h"
 #include "dslink/ws.h"
 #include "dslink/col/vector.h"
 
-#include <unistd.h>
+//#include <unistd.h>
 
 //thread-safe API async data structures
 typedef struct {
@@ -682,7 +683,7 @@ int dslink_init(int argc, char **argv,
                 const char *name, uint8_t isRequester,
                 uint8_t isResponder, DSLinkCallbacks *cbs) {
     DSLink *link = dslink_malloc(sizeof(DSLink));
-    bzero(link, sizeof(DSLink));
+    memset(link, '\0', sizeof(DSLink));
     uv_loop_init(&link->loop);
     link->loop.data = link;
 
@@ -791,7 +792,7 @@ int dslink_save_nodes(DSLink *link)
     return DSLINK_CANNOT_WRITE_FILE;
   }
 
-  if ( fsync(tmpFileFd) ) {
+  if (FlushFileBuffers((HANDLE)tmpFileFd) ) {
     int error = errno;
     log_err( "Cannot sync file '%s' to disk, error %s\n", s_tmp_file_name, strerror(error) );
     return DSLINK_CANNOT_WRITE_FILE;
@@ -997,6 +998,7 @@ int dslink_run_safe(struct DSLink *link, void (*callback)(struct DSLink *link, v
   return add_async_task( link, &run_wrapper, async_data );
 }
 
+/*
 static pthread_mutex_t tasks_data_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #include <sys/types.h>
@@ -1018,4 +1020,8 @@ int unlock_tasks_data()
   }
   return result;
 }
+*/
+
+int lock_tasks_data() { return 0; }
+int unlock_tasks_data() { return 0; }
 

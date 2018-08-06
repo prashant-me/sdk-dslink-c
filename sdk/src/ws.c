@@ -15,7 +15,7 @@
 #include "dslink/ws.h"
 #include "dslink/utils.h"
 
-#include <sys/time.h>
+#include <time.h>
 
 #define LOG_TAG "ws"
 #include "dslink/log.h"
@@ -290,6 +290,20 @@ ssize_t want_write_cb(wslay_event_context_ptr ctx,
     return written;
 }
 
+#include <sys/timeb.h>
+void gettimeofday(struct timeval* tv, struct timezone *tz) {
+	(void)tz;
+	struct _timeb timebuffer;
+	time_t time1;
+	unsigned short ms;
+
+	_ftime_s(&timebuffer);
+	time1 = timebuffer.time;
+	ms = timebuffer.millitm;
+	tv->tv_sec = (long)time1;
+	tv->tv_usec = (long)ms * 1000;
+}
+
 static
 void recv_frame_cb(wslay_event_context_ptr ctx,
                    const struct wslay_event_on_msg_recv_arg *arg,
@@ -400,6 +414,7 @@ void dslink_handshake_handle_ws(DSLink *link, link_callback on_requester_ready_c
     }
     link->_ws = ptr;
     link->poll = dslink_malloc(sizeof(uv_poll_t));
+	memset(link->poll, '\0', sizeof(uv_poll_t));
 
     mbedtls_net_set_nonblock(&link->_socket->socket_ctx);
     {

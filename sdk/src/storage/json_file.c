@@ -3,6 +3,8 @@
 #include <uv.h>
 #include <string.h>
 #include <dslink/utils.h>
+#include <fcntl.h>
+typedef unsigned int uint;
 
 typedef struct JsonStore {
     char *path;
@@ -40,7 +42,7 @@ void json_file_ignore_write(uv_fs_t *req) {
 
     uv_fs_t *close_req = dslink_malloc(sizeof(uv_fs_t));
     close_req->data = req->data;
-    uv_fs_close(req->loop, close_req, req->file, fs_close_cb);
+    uv_fs_close(req->loop, close_req, req->file.fd, fs_close_cb);
 
     uv_fs_req_cleanup(req);
     dslink_free(req);

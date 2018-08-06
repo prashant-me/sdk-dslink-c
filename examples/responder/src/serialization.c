@@ -3,7 +3,7 @@
 #include <dslink/log.h>
 #include "serialization.h"
 
-#include <strings.h>
+//#include <strings.h>
 
 static
 void save_node(uv_timer_t* timer) {
@@ -39,7 +39,7 @@ void load_node(DSLink *link, DSNode *node) {
 }
 
 void responder_init_serialization(DSLink *link, DSNode *root) {
-    bzero(&save_timer, 0);
+    memset(&save_timer, '\0', sizeof(save_timer));
     DSNode *node = dslink_node_create(root, "saved", "node");
 
     // data for serialization testing

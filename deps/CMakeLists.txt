@@ -11,35 +11,35 @@ set(LIBUV_SRC
 )
 
 if(WIN32)
-    add_definitions(-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0600 -D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(-D_CRT_SECURE_NO_DEPRECATE;-D_CRT_NONSTDC_NO_DEPRECATE -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0600 -D_CRT_SECURE_NO_WARNINGS)
     include_directories(${LIBUV_SRC_DIR}/win)
     set(LIBUV_SRC "${LIBUV_SRC}"
-        "${LIBUV_SRC_DIR}/async.c"
-        "${LIBUV_SRC_DIR}/core.c"
-        "${LIBUV_SRC_DIR}/dl.c"
-        "${LIBUV_SRC_DIR}/error.c"
-        "${LIBUV_SRC_DIR}/fs-event.c"
-        "${LIBUV_SRC_DIR}/fs.c"
-        "${LIBUV_SRC_DIR}/getaddrinfo.c"
-        "${LIBUV_SRC_DIR}/getnameinfo.c"
-        "${LIBUV_SRC_DIR}/handle.c"
-        "${LIBUV_SRC_DIR}/loop-watcher.c"
-        "${LIBUV_SRC_DIR}/pipe.c"
-        "${LIBUV_SRC_DIR}/poll.c"
-        "${LIBUV_SRC_DIR}/process-stdio.c"
-        "${LIBUV_SRC_DIR}/process.c"
-        "${LIBUV_SRC_DIR}/req.c"
-        "${LIBUV_SRC_DIR}/signal.c"
-        "${LIBUV_SRC_DIR}/snprintf.c"
-        "${LIBUV_SRC_DIR}/stream.c"
-        "${LIBUV_SRC_DIR}/tcp.c"
-        "${LIBUV_SRC_DIR}/thread.c"
-        "${LIBUV_SRC_DIR}/timer.c"
-        "${LIBUV_SRC_DIR}/tty.c"
-        "${LIBUV_SRC_DIR}/udp.c"
-        "${LIBUV_SRC_DIR}/util.c"
-        "${LIBUV_SRC_DIR}/winapi.c"
-        "${LIBUV_SRC_DIR}/winsock.c"
+	    "${LIBUV_SRC_DIR}/win/async.c"
+        "${LIBUV_SRC_DIR}/win/core.c"
+        "${LIBUV_SRC_DIR}/win/dl.c"
+        "${LIBUV_SRC_DIR}/win/error.c"
+        "${LIBUV_SRC_DIR}/win/fs-event.c"
+        "${LIBUV_SRC_DIR}/win/fs.c"
+        "${LIBUV_SRC_DIR}/win/getaddrinfo.c"
+        "${LIBUV_SRC_DIR}/win/getnameinfo.c"
+        "${LIBUV_SRC_DIR}/win/handle.c"
+        "${LIBUV_SRC_DIR}/win/loop-watcher.c"
+        "${LIBUV_SRC_DIR}/win/pipe.c"
+        "${LIBUV_SRC_DIR}/win/poll.c"
+        "${LIBUV_SRC_DIR}/win/process-stdio.c"
+        "${LIBUV_SRC_DIR}/win/process.c"
+        "${LIBUV_SRC_DIR}/win/req.c"
+        "${LIBUV_SRC_DIR}/win/signal.c"
+        "${LIBUV_SRC_DIR}/win/snprintf.c"
+        "${LIBUV_SRC_DIR}/win/stream.c"
+        "${LIBUV_SRC_DIR}/win/tcp.c"
+        "${LIBUV_SRC_DIR}/win/thread.c"
+        "${LIBUV_SRC_DIR}/win/timer.c"
+        "${LIBUV_SRC_DIR}/win/tty.c"
+        "${LIBUV_SRC_DIR}/win/udp.c"
+        "${LIBUV_SRC_DIR}/win/util.c"
+        "${LIBUV_SRC_DIR}/win/winapi.c"
+        "${LIBUV_SRC_DIR}/win/winsock.c"
     )
 else()
     include_directories(${LIBUV_SRC_DIR}/unix)
@@ -85,8 +85,8 @@ else()
 endif()
 
 add_library(libuv STATIC ${LIBUV_SRC})
-target_compile_options(libuv PRIVATE "-fno-strict-aliasing" "-Wno-unused-parameter")
-target_compile_options(libuv PRIVATE "-Wno-implicit-function-declaration")
+target_compile_options(libuv PRIVATE "-fno-strict-aliasing")
+#target_compile_options(libuv PRIVATE "-Wno-unused-parameter -Wno-implicit-function-declaration")
 export(TARGETS libuv
        FILE "${PROJECT_BINARY_DIR}/libuv-targets.cmake")
 export(PACKAGE libuv)

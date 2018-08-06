@@ -1,7 +1,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
-#include <sys/time.h>
+//#include <sys/time.h>
 #include <stdio.h>
 
 #include "dslink/mem/mem.h"
@@ -200,16 +200,21 @@ int dslink_str_starts_with(const char *a, const char *b) {
     return 1;
 }
 
-size_t dslink_create_ts(char *buf, size_t bufLen) {
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    time_t nowtime = now.tv_sec;
-    struct tm result;
 
-    strftime(buf, bufLen,
-                    "%Y-%m-%dT%H:%M:%S.000?%z", localtime_r(&nowtime, &result));
-    unsigned ms = (unsigned)(now.tv_usec / 1000);
-    char msstr[4];
+#include <sys/timeb.h>
+size_t dslink_create_ts(char *buf, size_t bufLen) {
+	struct _timeb timebuffer;
+	time_t time1;
+	unsigned short ms;
+	
+	_ftime_s(&timebuffer);
+	time1 = timebuffer.time;
+	ms = timebuffer.millitm;
+	struct tm result;
+	localtime_s(&result, &time1);
+	strftime(buf, bufLen, "%Y-%m-%dT%H:%M:%S.000?%z", &result);
+    
+	char msstr[4];
 
     if (ms > 99) {
         snprintf(msstr, 4, "%u", ms);
@@ -229,8 +234,9 @@ size_t dslink_create_ts(char *buf, size_t bufLen) {
     return 29;
 }
 
+#include <windows.h>
 int dslink_sleep(long ms) {
-    struct timespec req;
+/*    struct timespec req;
 
     if (ms > 999) {
         req.tv_sec = ms / 1000;
@@ -241,6 +247,9 @@ int dslink_sleep(long ms) {
     }
 
     return nanosleep(&req, NULL);
+*/
+	Sleep(ms);
+	return 0;
 }
 
 const char* dslink_checkIpv4Address(const char* address)

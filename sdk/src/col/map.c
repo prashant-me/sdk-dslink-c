@@ -49,7 +49,7 @@ size_t dslink_map_index_of_key(Map *map, void *key, size_t len) {
     return map->hash_key(key, len) % map->capacity;
 }
 
-inline
+
 int dslink_map_init(Map *map,
                     dslink_map_key_comparator cmp,
                     dslink_map_key_len_calc calc,

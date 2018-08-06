@@ -22,7 +22,7 @@ SET(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 add_definitions(-DIOT_DSA_C_SDK_VERSION="${VERSION}")
 
 ##### Configure CMake Modules #####
-
+set(CMAKE_C_COMPILER "cl.exe")
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/tools/cmake)
 
 include(MacroEnsureOutOfSourceBuild)
@@ -75,7 +75,7 @@ endif()
 
 ##### Configure Dependencies #####
 
-ADD_C_FLAGS("-fPIC")
+ADD_C_FLAGS("-fPIC /Gy")
 IF(CMAKE_BUILD_TYPE STREQUAL "Release")
     MESSAGE(INFO "Applying secure compiler and linker flags")
     IF(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
@@ -96,13 +96,14 @@ include(ExternalProject)
 ##### Configure Flags #####
 
 ADD_C_FLAGS("-std=gnu99")
-ADD_C_FLAGS("-Wno-tautological-compare")
+#ADD_C_FLAGS("-Wno-tautological-compare")
+#ADD_C_FLAGS("-Wno-implicit-function-declaration -Wno-implicit-fallthrough -Wno-clobbered -Wno-format-truncation")
 
-if (NOT NO_WARNINGS)
-    ADD_C_FLAGS("-Wall -Wextra -Werror")
-    ADD_C_FLAGS("-Wno-overlength-strings")
-    ADD_C_FLAGS("-pedantic")
-endif()
+#if (NOT NO_WARNINGS)
+#    ADD_C_FLAGS("-Wall -Wextra -Werror")
+#    ADD_C_FLAGS("-Wno-overlength-strings")
+#    ADD_C_FLAGS("-pedantic")
+#endif()
 
 if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
     ADD_C_FLAGS("-Qunused-arguments")
@@ -220,14 +221,14 @@ endif()
 
 if (DSLINK_BUILD_STATIC OR DSLINK_BUILD_EXAMPLES)
     add_library(sdk_dslink_c-static STATIC ${LIBRARY_SRC})
-    target_link_libraries(sdk_dslink_c-static jansson libuv ${DSLINK_PLATFORM_LIBS})
+    target_link_libraries(sdk_dslink_c-static ws2_32 psapi advapi32 shell32 iphlpapi user32 userenv jansson libuv ${DSLINK_PLATFORM_LIBS})
     set(DSLINK_INSTALL_TARGETS sdk_dslink_c sdk_dslink_c-static)
 else()
     set(DSLINK_INSTALL_TARGETS sdk_dslink_c)
 endif()
 
 add_library(sdk_dslink_c SHARED ${LIBRARY_SRC})
-target_link_libraries(sdk_dslink_c jansson libuv ${DSLINK_PLATFORM_LIBS})
+target_link_libraries(sdk_dslink_c ws2_32 psapi advapi32 shell32 iphlpapi user32 userenv  jansson libuv ${DSLINK_PLATFORM_LIBS})
 set_target_properties(sdk_dslink_c PROPERTIES VERSION ${VERSION} SOVERSION ${VERSION} )
 
 set(DSLINK_INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
@@ -270,8 +271,8 @@ if (DSLINK_BUILD_BROKER)
 
     install(TARGETS broker
         RUNTIME DESTINATION "${DSLINK_INSTALL_BIN_DIR}" COMPONENT bin)
-    install(TARGETS sdk_broker_c
-        LIBRARY DESTINATION "${DSLINK_INSTALL_LIB_DIR}" COMPONENT bin)
+    #install(TARGETS sdk_broker_c
+        #LIBRARY DESTINATION "${DSLINK_INSTALL_LIB_DIR}" COMPONENT bin)
 endif()
 
 ###### Configure Tests #####
@@ -285,10 +286,10 @@ endif()
 ###### Configure Examples ######
 
 if (DSLINK_BUILD_EXAMPLES)
-    foreach(example "responder" "requester" "storage")
+    foreach(example "responder" "requester" "storage" "dslink-c-xmr")
         include("${CMAKE_CURRENT_LIST_DIR}/examples/${example}/CMakeLists.txt")
         add_executable(${example} ${EXAMPLE_SRC})
-        target_link_libraries(${example} sdk_dslink_c-static)
+        target_link_libraries(${example} sdk_dslink_c-static Ws2_32)
     endforeach()
 endif()
 
@@ -324,6 +325,9 @@ SET(CPACK_COMPONENTS_GROUPING "IGNORE")
 SET(CPACK_COMPONENT_UNSPECIFIED_HIDDEN "TRUE")
 SET(CPACK_COMPONENT_UNSPECIFIED_REQUIRED "TRUE")
 SET(CPACK_SET_DESTDIR "OFF")
+
+SET(OSVERSION "Windows")
+
 
 if((${OSVERSION} STREQUAL "Debian8") OR
    (${OSVERSION} STREQUAL "Ubuntu16.04"))

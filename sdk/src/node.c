@@ -14,7 +14,7 @@
 #include "dslink/utils.h"
 #include "dslink/col/vector.h"
 
-#include <pthread.h>
+//#include <pthread.h>
 
 
 DSNode *dslink_node_create(DSNode *parent,
