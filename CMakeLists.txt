@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 project(sdk_dslink_c C)
 
 option(USE_CCACHE "Enable CCache Support" ON)
-option(DSLINK_BUILD_BROKER "Whether to build the broker" ON)
+option(DSLINK_BUILD_BROKER "Whether to build the broker" OFF)
 option(DSLINK_BUILD_STATIC "Whether to build the static library" ON)
 option(DSLINK_BUILD_EXAMPLES "Whether to build the examples" OFF)
 option(DSLINK_TEST "Whether to enable tests" OFF)
@@ -286,7 +286,7 @@ endif()
 ###### Configure Examples ######
 
 if (DSLINK_BUILD_EXAMPLES)
-    foreach(example "responder" "requester" "storage" "dslink-c-xmr")
+    foreach(example "responder" "requester" "storage")
         include("${CMAKE_CURRENT_LIST_DIR}/examples/${example}/CMakeLists.txt")
         add_executable(${example} ${EXAMPLE_SRC})
         target_link_libraries(${example} sdk_dslink_c-static Ws2_32)
