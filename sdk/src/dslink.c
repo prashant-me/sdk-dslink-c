@@ -792,21 +792,15 @@ int dslink_save_nodes(DSLink *link)
     return DSLINK_CANNOT_WRITE_FILE;
   }
 
-  if (FlushFileBuffers((HANDLE)tmpFileFd) ) {
-    int error = errno;
-    log_err( "Cannot sync file '%s' to disk, error %s\n", s_tmp_file_name, strerror(error) );
-    return DSLINK_CANNOT_WRITE_FILE;
-  }
-
   if ( fclose(tmpFile) ) {
     int error = errno;
     log_err( "Cannot close file '%s', error %s\n", s_tmp_file_name, strerror(error) );
     return DSLINK_CANNOT_WRITE_FILE;
   }
 
-  if ( rename( s_tmp_file_name, s_file_name ) != 0 ) {
-    int error = errno;
-    log_err( "Cannot rename file '%s' to '%s', error %s\n", s_tmp_file_name, s_file_name, strerror(error) );
+  if (MoveFileExA(s_tmp_file_name, s_file_name, MOVEFILE_REPLACE_EXISTING) == FALSE) {
+    DWORD error = GetLastError();
+    log_err( "Cannot rename file '%s' to '%s', error %ul\n", s_tmp_file_name, s_file_name, error );
     return DSLINK_CANNOT_WRITE_FILE;    
   }
 
