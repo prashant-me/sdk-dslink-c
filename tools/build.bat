@@ -5,11 +5,11 @@ echo "Applying Windows fix pathces"
 
 cd %LOC%\..\deps\wslay\
 echo "Applying patch at %cd% location"
-git apply %LOC%\..\patch\wslay_patch.txt
+git apply ..\patch\wslay_patch.txt
 
 cd ..\libuv\
 echo "Applying patch at %cd% location"
-git apply %LOC%\..\patch\libuv_poll_patch.txt
+git apply ..\patch\libuv_poll_patch.txt
 
 cd  %LOC%\..
 echo "%cd%"
