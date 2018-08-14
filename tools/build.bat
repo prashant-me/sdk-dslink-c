@@ -1,19 +1,19 @@
 @echo OFF
 set DEFAULT_ARGS="-DDSLINK_BUILD_EXAMPLES=ON -DDSLINK_BUILD_BROKER=OFF -DCMAKE_BUILD_TYPE=Release"
-set LOC="%cd%"
+set LOC="%~p0"
 echo "Applying Windows fix pathces"
 
-cd %LOC%/../deps/wslay/
+cd %LOC%\..\deps\wslay\
 echo "Applying patch at %cd% location"
-git apply %LOC%/../patch/wslay_patch.txt
+git apply ..\patch\wslay_patch.txt
 
-cd ../libuv/
+cd ..\libuv\
 echo "Applying patch at %cd% location"
-git apply %LOC%/../patch/libuv_poll_patch.txt
+git apply ..\patch\libuv_poll_patch.txt
 
-cd  %LOC%/..
+cd  %LOC%\..
 echo "%cd%"
-if exist ./build/CMakeCache.txt (
+if exist build\CMakeCache.txt (
   echo "exist"
 ) else (
    rmdir /s /q build
