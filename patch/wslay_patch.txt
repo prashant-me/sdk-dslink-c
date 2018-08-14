@@ -1,0 +1,12 @@
+diff --git a/lib/includes/wslay/wslay.h b/lib/includes/wslay/wslay.h
+index 71db0ac..7df41b8 100644
+--- a/lib/includes/wslay/wslay.h
++++ b/lib/includes/wslay/wslay.h
+@@ -42,6 +42,7 @@ extern "C" {
+ #ifndef WSLAY_VERSION
+ #  include <wslay/wslayver.h>
+ #endif /* WSLAY_VERSION */
++typedef intptr_t ssize_t;
+ 
+ enum wslay_error {
+   WSLAY_ERR_WANT_READ = -100,
