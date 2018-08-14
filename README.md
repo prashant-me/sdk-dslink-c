@@ -19,4 +19,5 @@ Execute the following command:
 
 ## Windows
 
-**Coming Soon**
+Ensure cmake and msbuild (Visual Studio) is added  to the System Path
+tools/build.bat
